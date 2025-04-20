@@ -1,0 +1,28 @@
+[
+    {
+        "signId": "how-are-you-001",
+        "word": "How are you?",
+        "sinhalaWord": "ඔයාට කොහොමද?",
+        "sinhalaTranslit": "oyata kohomada?",
+        "category": "conversation",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1742830925/how_are_you_tbqiae.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/howareyou.jpg",
+        "relatedSigns": [
+            "How's it going",
+            "What's up"
+        ]
+    },
+    {
+        "signId": "nice-to-meet-you-001",
+        "word": "Nice to meet you",
+        "sinhalaWord": "ඔබව හමුවීම සතුටක්",
+        "sinhalaTranslit": "obawa hamuweema sathutak",
+        "category": "conversation",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1742374651/mynameis.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/mynameis.jpg",
+        "relatedSigns": [
+            "Introduce",
+            "Name"
+        ]
+    }
+]

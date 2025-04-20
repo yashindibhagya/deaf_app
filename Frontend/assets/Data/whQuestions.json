@@ -1,0 +1,65 @@
+[
+    {
+        "signId": "what-001",
+        "word": "What",
+        "sinhalaWord": "මොකක්ද",
+        "sinhalaTranslit": "mokakda",
+        "category": "wh-questions",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1743938658/what_ucipvu.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/what.jpg"
+    },
+    {
+        "signId": "where-001",
+        "word": "Where",
+        "sinhalaWord": "කොහෙද",
+        "sinhalaTranslit": "koheda",
+        "category": "wh-questions",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1743938659/where_q6oqnc.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/where.jpg"
+    },
+    {
+        "signId": "who-001",
+        "word": "Who",
+        "sinhalaWord": "කවුද",
+        "sinhalaTranslit": "kawda",
+        "category": "wh-questions",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1743938659/who_j6m2in.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/who.jpg"
+    },
+    {
+        "signId": "when-001",
+        "word": "When",
+        "sinhalaWord": "කවදාද",
+        "sinhalaTranslit": "kawadada",
+        "category": "wh-questions",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1743938658/when_zbmv6m.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/when.jpg"
+    },
+    {
+        "signId": "why-001",
+        "word": "Why",
+        "sinhalaWord": "ඇයි",
+        "sinhalaTranslit": "aei",
+        "category": "wh-questions",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1743938659/why_vduxs6.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/why.jpg"
+    },
+    {
+        "signId": "how-001",
+        "word": "How",
+        "sinhalaWord": "කොහොමද",
+        "sinhalaTranslit": "kohomada",
+        "category": "wh-questions",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1743938658/how_phzj5d.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/how.jpg"
+    },
+    {
+        "signId": "which-001",
+        "word": "Which",
+        "sinhalaWord": "කුමන",
+        "sinhalaTranslit": "kumana",
+        "category": "wh-questions",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1743938659/which_wyk473.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/which.jpg"
+    }
+]

@@ -1,0 +1,74 @@
+[
+    {
+        "signId": "brown-001",
+        "word": "Brown",
+        "sinhalaWord": "හය",
+        "sinhalaTranslit": "haya",
+        "category": "colours",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1743930147/brown_c80aim.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/hello.jpg"
+    },
+    {
+        "signId": "green-001",
+        "word": "Green",
+        "sinhalaWord": "හය",
+        "sinhalaTranslit": "haya",
+        "category": "colours",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1743930147/green_uqhqtl.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/hello.jpg"
+    },
+    {
+        "signId": "blue-001",
+        "word": "Blue",
+        "sinhalaWord": "හය",
+        "sinhalaTranslit": "haya",
+        "category": "colours",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1743930146/blue_gnqeun.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/hello.jpg"
+    },
+    {
+        "signId": "white-001",
+        "word": "White",
+        "sinhalaWord": "හය",
+        "sinhalaTranslit": "haya",
+        "category": "colours",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1743930146/white_vv861j.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/hello.jpg"
+    },
+    {
+        "signId": "black-001",
+        "word": "Black",
+        "sinhalaWord": "හය",
+        "sinhalaTranslit": "haya",
+        "category": "colours",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1743930146/black_wf5hs2.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/hello.jpg"
+    },
+    {
+        "signId": "yellow-001",
+        "word": "Yellow",
+        "sinhalaWord": "හය",
+        "sinhalaTranslit": "haya",
+        "category": "colours",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1743930146/yellow_gounn6.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/hello.jpg"
+    },
+    {
+        "signId": "red-001",
+        "word": "Red",
+        "sinhalaWord": "හය",
+        "sinhalaTranslit": "haya",
+        "category": "colours",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1743930146/red_ozwqsc.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/hello.jpg"
+    },
+    {
+        "signId": "pink-001",
+        "word": "Pink",
+        "sinhalaWord": "හය",
+        "sinhalaTranslit": "haya",
+        "category": "colours",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1743930145/pink_w51djx.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/hello.jpg"
+    }
+]

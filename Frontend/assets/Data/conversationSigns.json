@@ -1,0 +1,154 @@
+[
+    {
+        "signId": "hello-001",
+        "word": "Hello",
+        "sinhalaWord": "ආයුබෝවන්",
+        "sinhalaTranslit": "ayubowan",
+        "category": "conversation",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1742374651/hello_g34znt.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/hello.jpg",
+        "relatedSigns": [
+            "Hi",
+            "Greeting",
+            "Welcome"
+        ]
+    },
+    {
+        "signId": "thank-you-001",
+        "word": "Thank you",
+        "sinhalaWord": "ස්තූතියි",
+        "sinhalaTranslit": "sthutiyi",
+        "category": "conversation",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1742377081/thank_you_qhsz8s.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/thankyou.jpg",
+        "relatedSigns": [
+            "Thanks",
+            "Appreciation"
+        ]
+    },
+    {
+        "signId": "you-001",
+        "word": "You",
+        "sinhalaWord": [
+            "ඔබ",
+            "ඔබට",
+            "ඔයාට",
+            "ඔයා"
+        ],
+        "sinhalaTranslit": [
+            "oba",
+            "obata",
+            "oyata",
+            "oya"
+        ],
+        "category": "conversation",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1742377081/you_t1accf.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/you.jpg",
+        "relatedSigns": [
+            "Your"
+        ]
+    },
+    {
+        "signId": "world-001",
+        "word": "World",
+        "sinhalaWord": "ලෝකය",
+        "sinhalaTranslit": "lokaya",
+        "category": "conversation",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1742377081/world_a59e9t.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/world.jpg",
+        "relatedSigns": [
+            "Earth",
+            "Global"
+        ]
+    },
+    {
+        "signId": "please-001",
+        "word": "Please",
+        "sinhalaWord": "කරුණාකර",
+        "sinhalaTranslit": "karunaakara",
+        "category": "conversation",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1742374651/please.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/please.jpg",
+        "relatedSigns": [
+            "Request",
+            "Kindly"
+        ]
+    },
+    {
+        "signId": "sorry-001",
+        "word": "Sorry",
+        "sinhalaWord": "සමාවෙන්න",
+        "sinhalaTranslit": "samaawenna",
+        "category": "conversation",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1742374651/sorry.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/sorry.jpg",
+        "relatedSigns": [
+            "Apologize",
+            "Excuse me"
+        ]
+    },
+    {
+        "signId": "yes-001",
+        "word": "Yes",
+        "sinhalaWord": "ඔව්",
+        "sinhalaTranslit": "ow",
+        "category": "conversation",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1742374651/yes.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/yes.jpg",
+        "relatedSigns": [
+            "Agree",
+            "Affirmative"
+        ]
+    },
+    {
+        "signId": "no-001",
+        "word": "No",
+        "sinhalaWord": "නැහැ",
+        "sinhalaTranslit": "naehae",
+        "category": "conversation",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1742374651/no.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/no.jpg",
+        "relatedSigns": [
+            "Negative",
+            "Decline"
+        ]
+    },
+    {
+        "signId": "good-001",
+        "word": "Good",
+        "sinhalaWord": "හොඳයි",
+        "sinhalaTranslit": "hodayi",
+        "category": "conversation",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1742374651/good.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/good.jpg",
+        "relatedSigns": [
+            "Well",
+            "Fine"
+        ]
+    },
+    {
+        "signId": "bad-001",
+        "word": "Bad",
+        "sinhalaWord": "නරකයි",
+        "sinhalaTranslit": "narakayi",
+        "category": "conversation",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1742374651/bad.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/bad.jpg",
+        "relatedSigns": [
+            "Poor",
+            "Not good"
+        ]
+    },
+    {
+        "signId": "name-001",
+        "word": "Name",
+        "sinhalaWord": "නම",
+        "sinhalaTranslit": "nama",
+        "category": "conversation",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1742752798/name_hjddtu.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/mynameis.jpg",
+        "relatedSigns": [
+            "Name"
+        ]
+    }
+]

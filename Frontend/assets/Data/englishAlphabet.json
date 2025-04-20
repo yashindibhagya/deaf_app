@@ -1,0 +1,184 @@
+[
+    {
+        "signId": "a-001",
+        "word": "A",
+        "category": "alphabet",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1742644990/a_bcg3yg.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/a.jpg"
+    },
+    {
+        "signId": "b-002",
+        "word": "B",
+        "category": "alphabet",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1742644992/b_pyl3ny.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/b.jpg"
+    },
+    {
+        "signId": "c-003",
+        "word": "C",
+        "category": "alphabet",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1742644993/c_mssxrd.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/c.jpg"
+    },
+    {
+        "signId": "d-004",
+        "word": "D",
+        "category": "alphabet",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1742644992/d_yyo7mq.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/d.jpg"
+    },
+    {
+        "signId": "e-005",
+        "word": "E",
+        "category": "alphabet",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1742644991/e_hzefqr.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/e.jpg"
+    },
+    {
+        "signId": "f-006",
+        "word": "F",
+        "category": "alphabet",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1742644993/f_xjwnng.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/f.jpg"
+    },
+    {
+        "signId": "g-007",
+        "word": "G",
+        "category": "alphabet",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1742644992/g_pnb0kt.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/g.jpg"
+    },
+    {
+        "signId": "h-008",
+        "word": "H",
+        "category": "alphabet",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1742644990/h_nvl8mc.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/h.jpg"
+    },
+    {
+        "signId": "i-009",
+        "word": "I",
+        "category": "alphabet",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1742644991/i_h6pnc0.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/i.jpg"
+    },
+    {
+        "signId": "j-010",
+        "word": "J",
+        "category": "alphabet",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1742644994/j_qyzmng.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/j.jpg"
+    },
+    {
+        "signId": "k-011",
+        "word": "K",
+        "category": "alphabet",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1742644994/k_wgrfv4.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/k.jpg"
+    },
+    {
+        "signId": "l-012",
+        "word": "L",
+        "category": "alphabet",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1742644991/l_jysnfk.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/l.jpg"
+    },
+    {
+        "signId": "m-013",
+        "word": "M",
+        "category": "alphabet",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1742644994/m_cyrmth.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/m.jpg"
+    },
+    {
+        "signId": "n-014",
+        "word": "N",
+        "category": "alphabet",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1742644994/n_bx8exp.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/n.jpg"
+    },
+    {
+        "signId": "o-015",
+        "word": "O",
+        "category": "alphabet",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1742644989/o_j2xcje.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/o.jpg"
+    },
+    {
+        "signId": "p-016",
+        "word": "P",
+        "category": "alphabet",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1742644993/p_b2tzfe.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/p.jpg"
+    },
+    {
+        "signId": "q-017",
+        "word": "Q",
+        "category": "alphabet",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1742644995/q_irpiab.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/q.jpg"
+    },
+    {
+        "signId": "r-018",
+        "word": "R",
+        "category": "alphabet",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1742644995/r_vijhuf.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/r.jpg"
+    },
+    {
+        "signId": "s-019",
+        "word": "S",
+        "category": "alphabet",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1742644995/s_tcqhbt.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/s.jpg"
+    },
+    {
+        "signId": "t-020",
+        "word": "T",
+        "category": "alphabet",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1742644990/t_agvwqe.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/t.jpg"
+    },
+    {
+        "signId": "u-021",
+        "word": "U",
+        "category": "alphabet",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1742644994/u_ppjzof.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/u.jpg"
+    },
+    {
+        "signId": "v-022",
+        "word": "V",
+        "category": "alphabet",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1742644989/v_dnpkjl.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/v.jpg"
+    },
+    {
+        "signId": "w-023",
+        "word": "W",
+        "category": "alphabet",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1742644988/w_jsteue.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/w.jpg"
+    },
+    {
+        "signId": "x-024",
+        "word": "X",
+        "category": "alphabet",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1742644989/x_f49i64.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/x.jpg"
+    },
+    {
+        "signId": "y-025",
+        "word": "Y",
+        "category": "alphabet",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1742644990/y_k429w2.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/y.jpg"
+    },
+    {
+        "signId": "z-026",
+        "word": "Z",
+        "category": "alphabet",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1742644991/z_hqd7tp.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/z.jpg"
+    }
+]

@@ -1,0 +1,84 @@
+[
+    {
+        "signId": "mother-001",
+        "word": "Mother",
+        "sinhalaWord": "ආයුබෝවන්",
+        "sinhalaTranslit": "ammaa",
+        "category": "people",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1743767547/mother_n1utau.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/hello.jpg",
+        "relatedSigns": [
+            "Mom",
+            "Ma"
+        ]
+    },
+    {
+        "signId": "father-001",
+        "word": "Father",
+        "sinhalaWord": "ආයුබෝවන්",
+        "sinhalaTranslit": "ayubowan",
+        "category": "people",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1743767546/father_y0qkmr.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/hello.jpg",
+        "relatedSigns": [
+            "Dad"
+        ]
+    },
+    {
+        "signId": "aunt-001",
+        "word": "Aunt",
+        "sinhalaWord": "ආයුබෝවන්",
+        "sinhalaTranslit": "ayubowan",
+        "category": "people",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1743767547/aunt_d2kusp.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/hello.jpg",
+        "relatedSigns": [
+            "Aunty"
+        ]
+    },
+    {
+        "signId": "brother-001",
+        "word": "Brother",
+        "sinhalaWord": "ආයුබෝවන්",
+        "sinhalaTranslit": "ayubowan",
+        "category": "people",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1743767546/brother_hjkzjy.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/hello.jpg"
+    },
+    {
+        "signId": "grandfather-001",
+        "word": "Grandfather",
+        "sinhalaWord": "ආයුබෝවන්",
+        "sinhalaTranslit": "ayubowan",
+        "category": "people",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1743767547/grandfather_ecbug8.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/hello.jpg"
+    },
+    {
+        "signId": "grandmother-001",
+        "word": "Grandmother",
+        "sinhalaWord": "ආයුබෝවන්",
+        "sinhalaTranslit": "ayubowan",
+        "category": "people",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1743767547/grandmother_xdpyhw.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/hello.jpg"
+    },
+    {
+        "signId": "sister-001",
+        "word": "Sister",
+        "sinhalaWord": "ආයුබෝවන්",
+        "sinhalaTranslit": "ayubowan",
+        "category": "people",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1743767548/sister_ll2bsr.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/hello.jpg"
+    },
+    {
+        "signId": "uncle-001",
+        "word": "Uncle",
+        "sinhalaWord": "ආයුබෝවන්",
+        "sinhalaTranslit": "ayubowan",
+        "category": "people",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1743767548/uncle_dd8xlr.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/hello.jpg"
+    }
+]

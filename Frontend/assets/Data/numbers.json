@@ -1,0 +1,121 @@
+[
+    {
+        "signId": "1-001",
+        "word": "1",
+        "sinhalaTranslit": "eka",
+        "category": "numbers",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1743767955/one_uuy6vs.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/hello.jpg",
+        "relatedSigns": [
+            "One"
+        ]
+    },
+    {
+        "signId": "2-001",
+        "word": "2",
+        "sinhalaWord": "ආයුබෝවන්",
+        "sinhalaTranslit": "deka",
+        "category": "numbers",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1743767954/two_n47udz.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/hello.jpg",
+        "relatedSigns": [
+            "Two"
+        ]
+    },
+    {
+        "signId": "3-001",
+        "word": "3",
+        "sinhalaWord": "ආයුබෝවන්",
+        "sinhalaTranslit": "thuna",
+        "category": "numbers",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1743767954/three_p6m4cc.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/hello.jpg",
+        "relatedSigns": [
+            "Three"
+        ]
+    },
+    {
+        "signId": "4-001",
+        "word": "4",
+        "sinhalaWord": "හතර",
+        "sinhalaTranslit": "hathara",
+        "category": "numbers",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1743767953/four_rup2yb.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/hello.jpg",
+        "relatedSigns": [
+            "Four"
+        ]
+    },
+    {
+        "signId": "5-001",
+        "word": "5",
+        "sinhalaWord": "පහ",
+        "sinhalaTranslit": "paha",
+        "category": "numbers",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1743767953/five_h9fabv.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/hello.jpg",
+        "relatedSigns": [
+            "Five"
+        ]
+    },
+    {
+        "signId": "6-001",
+        "word": "6",
+        "sinhalaWord": "හය",
+        "sinhalaTranslit": "haya",
+        "category": "numbers",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1743767955/six_bpjhw7.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/hello.jpg",
+        "relatedSigns": [
+            "Six"
+        ]
+    },
+    {
+        "signId": "7-001",
+        "word": "7",
+        "sinhalaWord": "හත",
+        "sinhalaTranslit": "hatha",
+        "category": "numbers",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1743767955/seven_ld8zvq.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/hello.jpg",
+        "relatedSigns": [
+            "Seven"
+        ]
+    },
+    {
+        "signId": "8-001",
+        "word": "8",
+        "sinhalaWord": "අට",
+        "sinhalaTranslit": "ata",
+        "category": "numbers",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1743767954/eight_egh9y0.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/hello.jpg",
+        "relatedSigns": [
+            "Eight"
+        ]
+    },
+    {
+        "signId": "9-001",
+        "word": "9",
+        "sinhalaWord": "නවය",
+        "sinhalaTranslit": "nawaya",
+        "category": "numbers",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1743767954/nine_nklxxq.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/hello.jpg",
+        "relatedSigns": [
+            "Nine"
+        ]
+    },
+    {
+        "signId": "10-001",
+        "word": "10",
+        "sinhalaWord": "දහය",
+        "sinhalaTranslit": "dahaya",
+        "category": "numbers",
+        "videoUrl": "https://res.cloudinary.com/dxjb5lepy/video/upload/v1743767956/ten_ofbxui.mp4",
+        "thumbnailUrl": "https://res.cloudinary.com/dxjb5lepy/image/upload/v1742374651/thumbnails/hello.jpg",
+        "relatedSigns": [
+            "Ten"
+        ]
+    }
+]
