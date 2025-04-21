@@ -74,15 +74,15 @@ export default function Learning() {
         }
 
         try {
-            // Navigate to the course detail page
-            router.push(`/courseView/${course.id}`);
-        } catch (error) {
-            console.error("Navigation error:", error);
-            // Fallback navigation if the above fails
+            // Use a consistent navigation approach with dynamic routes
             router.push({
                 pathname: '/courseView/[id]',
                 params: { id: course.id }
             });
+        } catch (error) {
+            console.error("Navigation error:", error);
+            // Fallback approach
+            router.push(`/courseView/${course.id}`);
         }
     };
 

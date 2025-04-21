@@ -24,19 +24,36 @@ export default function SignToText() {
     const [isRecording, setIsRecording] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
     const [translatedText, setTranslatedText] = useState("");
-    const [cameraType, setCameraType] = useState(Camera.Constants.Type.front);
+    const [cameraType, setCameraType] = useState(null); // Initialize as null
     const cameraRef = useRef(null);
+
+    // Initialize camera constants after ensuring Camera is available
+    useEffect(() => {
+        // Safely set camera type once Camera is confirmed available
+        if (Camera && Camera.Constants && Camera.Constants.Type) {
+            setCameraType(Camera.Constants.Type.front);
+        }
+    }, []);
 
     // Request camera permissions
     useEffect(() => {
         (async () => {
-            const { status } = await Camera.requestCameraPermissionsAsync();
-            setHasPermission(status === "granted");
+            try {
+                const { status } = await Camera.requestCameraPermissionsAsync();
+                setHasPermission(status === "granted");
+            } catch (error) {
+                console.error("Error requesting camera permissions:", error);
+                setHasPermission(false);
+            }
         })();
     }, []);
 
     // Function to toggle camera type (front/back)
     const toggleCameraType = () => {
+        if (!Camera || !Camera.Constants || !Camera.Constants.Type) {
+            return; // Exit if Camera is not available
+        }
+
         setCameraType(
             cameraType === Camera.Constants.Type.front
                 ? Camera.Constants.Type.back
@@ -52,7 +69,7 @@ export default function SignToText() {
             setIsRecording(true);
             const videoOptions = {
                 maxDuration: 10, // 10 seconds max
-                quality: Camera.Constants.VideoQuality["720p"],
+                quality: "720p", // Use string value instead of constant
                 mute: true,
             };
 
@@ -109,15 +126,14 @@ export default function SignToText() {
         setTranslatedText("");
     };
 
-    // Handle permission denied
-    if (hasPermission === false) {
+    if (!Camera || !Camera.Constants || !Camera.Constants.Type) {
         return (
             <SafeAreaView style={styles.container}>
                 <Common />
                 <View style={styles.errorContainer}>
-                    <Text style={styles.errorText}>No access to camera</Text>
+                    <Text style={styles.errorText}>Camera not available</Text>
                     <Text style={styles.errorSubtext}>
-                        Camera permission is required for sign language translation
+                        The camera module could not be initialized. Please try restarting the app.
                     </Text>
                 </View>
             </SafeAreaView>

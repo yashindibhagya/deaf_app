@@ -165,6 +165,7 @@ export default function Profile() {
     const handleLogout = async () => {
         try {
             await logoutUser();
+            // Explicitly navigate to the welcome screen after logout
             router.replace("/"); // Redirect to welcome screen
         } catch (error) {
             console.error("Logout error:", error);
