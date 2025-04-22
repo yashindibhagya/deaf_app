@@ -12,15 +12,18 @@ import {
     Platform,
     StatusBar,
     Keyboard,
-    Alert
+    Alert,
+    Animated
 } from 'react-native';
 import { Video } from 'expo-av';
 import { Audio } from 'expo-av'; // Import Audio for voice recording
 import { VideoContext } from '../../context/VideoContext';
 import * as FileSystem from 'expo-file-system';
 import { useRouter } from 'expo-router';
-// Note: We're only using expo-av for audio recording
-// Speech recognition would need to be implemented with a service API in production
+import * as Speech from 'expo-speech';
+
+// Import the speech recognition service
+import { recognizeSpeech, recognizeSpeechOffline } from '../../services/speechService';
 
 // Import the translation API services
 import {
@@ -37,7 +40,7 @@ import Common from '../../Components/Container/Common';
 import Button from '../../Components/Shared/Button';
 import { MaterialIcons, Ionicons, FontAwesome } from '@expo/vector-icons';
 
-// Import Firebase functions
+// Firebase imports
 import { doc, setDoc, collection, getDocs, deleteDoc, query, where, orderBy, limit, writeBatch } from 'firebase/firestore';
 import { auth, db } from '../../config/firebaseConfig';
 
@@ -155,6 +158,30 @@ const prefetchVideo = async (url, cacheKey) => {
     }
 };
 
+// Optimized recording options for speech recognition
+const getRecordingOptions = () => {
+    return {
+        android: {
+            extension: '.m4a',
+            outputFormat: Audio.RECORDING_OPTION_ANDROID_OUTPUT_FORMAT_MPEG_4,
+            audioEncoder: Audio.RECORDING_OPTION_ANDROID_AUDIO_ENCODER_AAC,
+            sampleRate: 44100,
+            numberOfChannels: 1, // Mono is better for speech recognition
+            bitRate: 128000,
+        },
+        ios: {
+            extension: '.m4a',
+            audioQuality: Audio.RECORDING_OPTION_IOS_AUDIO_QUALITY_HIGH,
+            sampleRate: 44100,
+            numberOfChannels: 1, // Mono is better for speech recognition
+            bitRate: 128000,
+            linearPCMBitDepth: 16,
+            linearPCMIsBigEndian: false,
+            linearPCMIsFloat: false,
+        },
+    };
+};
+
 export default function TextToSign() {
     const inputRef = useRef(null);
     const scrollViewRef = useRef(null);
@@ -212,6 +239,9 @@ export default function TextToSign() {
     const [recordingDuration, setRecordingDuration] = useState(0);
     const durationTimerRef = useRef(null);
 
+    // Animation value for recording indicator pulse
+    const pulseAnim = useRef(new Animated.Value(1)).current;
+
     const router = useRouter();
     const { getSignVideoByWord, isLoading, signsData, recordFailedVideoUrl, findSignForPhrase } = useContext(VideoContext);
     const videoRef = useRef(null);
@@ -247,6 +277,46 @@ export default function TextToSign() {
         };
     }, []);
 
+    // Animation for the recording indicator pulse
+    useEffect(() => {
+        let pulseAnimation;
+        if (isRecording) {
+            // Create a repeating pulse animation
+            pulseAnimation = Animated.loop(
+                Animated.sequence([
+                    Animated.timing(pulseAnim, {
+                        toValue: 1.5,
+                        duration: 500,
+                        useNativeDriver: true,
+                    }),
+                    Animated.timing(pulseAnim, {
+                        toValue: 1,
+                        duration: 500,
+                        useNativeDriver: true,
+                    }),
+                ])
+            );
+
+            // Start the animation
+            pulseAnimation.start();
+        } else {
+            // Reset the animation when not recording
+            Animated.timing(pulseAnim, {
+                toValue: 1,
+                duration: 200,
+                useNativeDriver: true,
+            }).start();
+        }
+
+        // Clean up animation when component unmounts or recording state changes
+        return () => {
+            if (pulseAnimation) {
+                pulseAnimation.stop();
+            }
+        };
+    }, [isRecording, pulseAnim]);
+
+
     // Start recording audio
     const startRecording = async () => {
         try {
@@ -260,124 +330,245 @@ export default function TextToSign() {
                 }
             }
 
+            // First provide feedback to the user
+            if (Platform.OS === 'ios') {
+                // On iOS, haptic feedback
+                try {
+                    const Haptics = await import('expo-haptics');
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                } catch (err) {
+                    console.log('Haptics not available:', err);
+                }
+            }
+
             // Make sure audio mode is set for recording
             await Audio.setAudioModeAsync({
                 allowsRecordingIOS: true,
                 playsInSilentModeIOS: true,
                 staysActiveInBackground: false,
+                playThroughEarpieceAndroid: false, // Use speaker
             });
 
-            // Prepare the recording
-            const recordingOptions = {
-                android: {
-                    extension: '.m4a',
-                    outputFormat: Audio.RECORDING_OPTION_ANDROID_OUTPUT_FORMAT_MPEG_4,
-                    audioEncoder: Audio.RECORDING_OPTION_ANDROID_AUDIO_ENCODER_AAC,
-                    sampleRate: 44100,
-                    numberOfChannels: 2,
-                    bitRate: 128000,
-                },
-                ios: {
-                    extension: '.m4a',
-                    audioQuality: Audio.RECORDING_OPTION_IOS_AUDIO_QUALITY_HIGH,
-                    sampleRate: 44100,
-                    numberOfChannels: 2,
-                    bitRate: 128000,
-                    linearPCMBitDepth: 16,
-                    linearPCMIsBigEndian: false,
-                    linearPCMIsFloat: false,
-                },
-            };
+            // Get optimized recording options for speech recognition
+            const recordingOptions = getRecordingOptions();
 
+            // Initialize recording
             const newRecording = new Audio.Recording();
-            await newRecording.prepareToRecordAsync(recordingOptions);
-            await newRecording.startAsync();
 
-            setRecording(newRecording);
-            setIsRecording(true);
-            setRecordingStatus('recording');
+            try {
+                // Show that we're getting ready to record
+                setRecordingStatus('preparing');
+                console.log('Preparing to record with options:', recordingOptions);
 
-            // Start a timer to track recording duration
-            setRecordingDuration(0);
-            durationTimerRef.current = setInterval(() => {
-                setRecordingDuration(prev => prev + 1);
-            }, 1000);
+                // Prepare and start the recording
+                await newRecording.prepareToRecordAsync(recordingOptions);
+                await newRecording.startAsync();
+                console.log('Recording started successfully');
 
+                // Update state after successful start
+                setRecording(newRecording);
+                setIsRecording(true);
+                setRecordingStatus('recording');
+
+                // Reset and start the duration timer
+                setRecordingDuration(0);
+                if (durationTimerRef.current) {
+                    clearInterval(durationTimerRef.current);
+                }
+                durationTimerRef.current = setInterval(() => {
+                    setRecordingDuration(prev => {
+                        // Add maximum recording duration (30 seconds)
+                        if (prev >= 30) {
+                            stopRecording();
+                            return 30;
+                        }
+                        return prev + 1;
+                    });
+                }, 1000);
+            } catch (err) {
+                console.error('Recording preparation failed', err);
+                throw err;
+            }
         } catch (error) {
-            console.error('Failed to start recording', error);
-            Alert.alert('Error', 'Failed to start recording. Please try again.');
+            console.error('Failed to start recording:', error);
+            Alert.alert(
+                'Recording Error',
+                'Failed to start recording. Please check your microphone and try again.',
+                [{ text: 'OK' }]
+            );
+            setRecordingStatus('idle');
         }
     };
+
 
     // Stop recording and process the audio
     const stopRecording = async () => {
         if (!recording) return;
 
         try {
-            // Stop the recording
-            await recording.stopAndUnloadAsync();
-            clearInterval(durationTimerRef.current);
-
-            setIsRecording(false);
-            setRecordingStatus('processing');
-
-            // Get the recording URI
-            const uri = recording.getURI();
-            if (!uri) {
-                throw new Error('Recording URI is undefined');
+            // First provide feedback to the user
+            if (Platform.OS === 'ios') {
+                // On iOS, haptic feedback
+                try {
+                    const Haptics = await import('expo-haptics');
+                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                } catch (err) {
+                    console.log('Haptics not available:', err);
+                }
             }
 
-            // Process the recording for speech-to-text
-            processRecording(uri);
+            // Update UI state first to provide immediate feedback
+            setIsRecording(false);
+            setRecordingStatus('stopping');
+            console.log('Stopping recording...');
 
+            // Clear the duration timer
+            if (durationTimerRef.current) {
+                clearInterval(durationTimerRef.current);
+                durationTimerRef.current = null;
+            }
+
+            let recordingUri = null;
+
+            // Try to stop the recording gracefully
+            try {
+                // Stop the recording and get its status
+                const status = await recording.stopAndUnloadAsync();
+                console.log('Recording stopped successfully with status:', status);
+
+                // Get the recording URI
+                recordingUri = recording.getURI();
+
+                if (!recordingUri) {
+                    throw new Error('Recording URI is undefined');
+                }
+
+                console.log('Recording saved to:', recordingUri);
+
+                // Check if recording is too short (less than 0.5 seconds)
+                if (recordingDuration < 1) {
+                    setRecordingStatus('idle');
+                    Alert.alert(
+                        'Recording Too Short',
+                        'Please record for at least 1 second.',
+                        [{ text: 'OK' }]
+                    );
+                    return;
+                }
+
+                // Process the recording for speech-to-text
+                await processRecording(recordingUri);
+
+            } catch (stopError) {
+                console.error('Error stopping recording:', stopError);
+
+                // Try a fallback method to ensure recording stops
+                try {
+                    await Audio.setAudioModeAsync({
+                        allowsRecordingIOS: false,
+                        playsInSilentModeIOS: false,
+                    });
+
+                    setRecordingStatus('idle');
+                    Alert.alert(
+                        'Recording Note',
+                        'Recording may not have saved properly. Please try again.',
+                        [{ text: 'OK' }]
+                    );
+                } catch (fallbackError) {
+                    console.error('Fallback error handling failed:', fallbackError);
+                    throw fallbackError;
+                }
+            }
         } catch (error) {
-            console.error('Failed to stop recording', error);
-            Alert.alert('Error', 'Failed to process recording. Please try again.');
+            console.error('Failed to stop recording:', error);
+            Alert.alert(
+                'Recording Error',
+                'Failed to process recording. Please try again.',
+                [{ text: 'OK' }]
+            );
             setRecordingStatus('idle');
+        } finally {
+            // Ensure we clean up and reset states
+            setRecording(null);
         }
     };
 
-    // Process the recording with a speech-to-text service
+
+    // Process the recording with speech recognition service
     const processRecording = async (uri) => {
         try {
-            // Here you would typically send the audio file to a speech-to-text service
-            // For demonstration, we'll simulate this with a timeout and sample text
+            // Update UI state to show processing
+            setRecordingStatus('processing');
 
-            // In a real implementation, you would use a service like Google Cloud Speech-to-Text,
-            // Azure Speech Services, or a compatible React Native library
+            // Get appropriate language code based on current language mode
+            const languageCode =
+                languageMode === 'english' ? 'en-US' :
+                    languageMode === 'sinhala' ? 'si-LK' :
+                        'ta-IN'; // Tamil
 
-            // Simulating API call delay
-            setTimeout(() => {
-                // Mock recognized text based on language mode
-                let recognizedText = '';
+            // Instead of using our speech service, let's directly prompt the user to enter text
+            // This is a temporary solution until your backend speech API is integrated
 
-                if (languageMode === 'english') {
-                    recognizedText = 'Hello how are you today';
-                } else if (languageMode === 'sinhala') {
-                    recognizedText = 'ayubowan kohomada oyata';
-                } else if (languageMode === 'tamil') {
-                    recognizedText = 'vanakkam eppadi irukkirkal';
-                }
+            // Show prompt asking user to type what they said
+            Alert.prompt(
+                'Speech Input',
+                'Please type what you just said:',
+                [
+                    {
+                        text: 'Cancel',
+                        onPress: () => {
+                            console.log('User cancelled speech input');
+                            setRecordingStatus('idle');
+                        },
+                        style: 'cancel'
+                    },
+                    {
+                        text: 'OK',
+                        onPress: (text) => {
+                            if (text && text.trim()) {
+                                // Update input text field with user-provided text
+                                setInputText(text);
 
-                // Update the input text with the recognized speech
-                setInputText(recognizedText);
+                                // Also update the appropriate script based on language
+                                if (languageMode === 'sinhala') {
+                                    const sinhalaText = transliterateToSinhalaScript(text);
+                                    setSinhalaScript(sinhalaText);
+                                } else if (languageMode === 'tamil') {
+                                    const tamilText = transliterateToTamilScript(text);
+                                    setTamilScript(tamilText);
+                                }
 
-                // Update the script displays based on language mode
-                if (languageMode === 'sinhala') {
-                    setSinhalaScript(transliterateToSinhalaScript(recognizedText));
-                } else if (languageMode === 'tamil') {
-                    setTamilScript(transliterateToTamilScript(recognizedText));
-                }
+                                // Trigger translation automatically after a slight delay
+                                setTimeout(() => {
+                                    handleTranslate();
+                                }, 300);
+                            }
+                            setRecordingStatus('idle');
+                        }
+                    }
+                ],
+                'plain-text'
+            );
 
+            // For Android which doesn't support Alert.prompt, use a different approach
+            // You would implement a custom modal or input dialog
+            if (Platform.OS === 'android') {
                 setRecordingStatus('idle');
-
-                // In a production app, you would want to automatically trigger translation here:
-                // handleTranslate();
-            }, 2000);
+                Alert.alert(
+                    'Manual Input Required',
+                    'Please type what you said in the text box and press Translate.',
+                    [{ text: 'OK' }]
+                );
+            }
 
         } catch (error) {
-            console.error('Failed to process speech', error);
-            Alert.alert('Error', 'Failed to convert speech to text. Please try again or type manually.');
+            console.error('Speech processing error:', error);
+            Alert.alert(
+                'Speech Recognition Error',
+                'Could not process your speech. Please type your message instead.',
+                [{ text: 'OK' }]
+            );
             setRecordingStatus('idle');
         }
     };
@@ -400,6 +591,15 @@ export default function TextToSign() {
             );
         }
 
+        if (recordingStatus === 'preparing') {
+            return (
+                <View style={styles.recordingStatusContainer}>
+                    <ActivityIndicator size="small" color="#FF9800" />
+                    <Text style={styles.recordingStatusText}>Preparing...</Text>
+                </View>
+            );
+        }
+
         if (recordingStatus === 'processing') {
             return (
                 <View style={styles.recordingStatusContainer}>
@@ -409,14 +609,36 @@ export default function TextToSign() {
             );
         }
 
+        if (recordingStatus === 'stopping') {
+            return (
+                <View style={styles.recordingStatusContainer}>
+                    <ActivityIndicator size="small" color="#FF9800" />
+                    <Text style={styles.recordingStatusText}>Finalizing...</Text>
+                </View>
+            );
+        }
+
         if (isRecording) {
+            const remainingTime = 30 - recordingDuration;
+            const isTimeRunningOut = remainingTime <= 5;
+
             return (
                 <View style={styles.recordingContainer}>
                     <View style={styles.recordingIndicator}>
-                        <View style={styles.recordingDot} />
-                        <Text style={styles.recordingTime}>
+                        <Animated.View
+                            style={[
+                                styles.recordingDot,
+                                isTimeRunningOut && styles.recordingDotWarning,
+                                { transform: [{ scale: pulseAnim }] }
+                            ]}
+                        />
+                        <Text style={[
+                            styles.recordingTime,
+                            isTimeRunningOut && styles.recordingTimeWarning
+                        ]}>
                             {Math.floor(recordingDuration / 60).toString().padStart(2, '0')}:
                             {(recordingDuration % 60).toString().padStart(2, '0')}
+                            {isTimeRunningOut && ` (${remainingTime}s left)`}
                         </Text>
                     </View>
                     <TouchableOpacity
@@ -429,13 +651,46 @@ export default function TextToSign() {
             );
         }
 
+        // Language-specific mic button tooltip
+        const getLanguageTooltip = () => {
+            switch (languageMode) {
+                case 'english':
+                    return "Speak in English";
+                case 'sinhala':
+                    return "Speak in Sinhala";
+                case 'tamil':
+                    return "Speak in Tamil";
+                default:
+                    return "Speak now";
+            }
+        };
+
         return (
-            <TouchableOpacity
-                style={styles.micButton}
-                onPress={startRecording}
-            >
-                <MaterialIcons name="mic" size={24} color="#155658" />
-            </TouchableOpacity>
+            <View style={styles.micButtonContainer}>
+                <TouchableOpacity
+                    style={[
+                        styles.micButton,
+                        {
+                            borderColor:
+                                languageMode === 'english' ? '#FF9800' :
+                                    languageMode === 'sinhala' ? '#4C9EFF' :
+                                        '#9C27B0' // Tamil
+                        }
+                    ]}
+                    onPress={startRecording}
+                >
+                    <MaterialIcons
+                        name="mic"
+                        size={24}
+                        color={
+                            languageMode === 'english' ? '#FF9800' :
+                                languageMode === 'sinhala' ? '#4C9EFF' :
+                                    '#9C27B0' // Tamil
+                        }
+                    />
+                </TouchableOpacity>
+                <Text style={styles.micButtonTooltip}>{getLanguageTooltip()}</Text>
+            </View>
         );
     };
 
@@ -2097,8 +2352,9 @@ export default function TextToSign() {
             )}
         </SafeAreaView>
     );
-}
 
+
+}
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,

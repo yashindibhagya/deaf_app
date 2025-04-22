@@ -13,9 +13,6 @@ import {
 import { useRouter } from 'expo-router';
 import { useVideo } from '../../context/VideoContext';
 
-/**
- * Learning screen that displays available sign language courses
- */
 export default function Learning() {
     const router = useRouter();
     const { coursesData, isLoading, getCourseProgress } = useVideo();
@@ -165,7 +162,7 @@ export default function Learning() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: '#D0F3DA',
         padding: 25,
     },
     loadingContainer: {
