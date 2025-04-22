@@ -16,7 +16,6 @@ import { useRouter } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
 import { registerUser } from "../../services/authService";
 import Button from "../../Components/Shared/Button";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 /**
  * Sign Up screen for creating a new account
@@ -26,7 +25,6 @@ export default function SignUp() {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [confirmPassword, setConfirmPassword] = useState("");
     const [loading, setLoading] = useState(false);
 
     // Handle sign up
@@ -52,28 +50,20 @@ export default function SignUp() {
             return;
         }
 
-        if (password !== confirmPassword) {
-            Alert.alert("Error", "Passwords do not match");
-            return;
-        }
-
         setLoading(true);
 
         try {
             // Register the user
             await registerUser(email, password, name);
 
-            // Important: Set flag for new user that NEEDS to see onboarding
-            await AsyncStorage.setItem("isNewUser", "true");
-
-            // Show success message and navigate directly to the first onboarding screen
+            // Show success message and navigate to sign in
             Alert.alert(
                 "Account Created",
                 "Your account has been successfully created!",
                 [
                     {
-                        text: "Continue",
-                        onPress: () => router.replace("/onboarding/screen1")
+                        text: "Sign In Now",
+                        onPress: () => router.push("/auth/signIn")
                     }
                 ]
             );
@@ -148,14 +138,6 @@ export default function SignUp() {
                         style={styles.textInput}
                         onChangeText={setPassword}
                         value={password}
-                    />
-
-                    <TextInput
-                        placeholder="Confirm Password"
-                        secureTextEntry={true}
-                        style={styles.textInput}
-                        onChangeText={setConfirmPassword}
-                        value={confirmPassword}
                     />
 
                     {/* Sign Up Button */}
@@ -253,7 +235,7 @@ const styles = StyleSheet.create({
         position: "absolute",
         top: 20,
         left: 10,
-        padding: 10, // Adds touchable area
+        padding: 10,
         backgroundColor: "#fff",
         borderRadius: 30,
         zIndex: 1,

@@ -36,9 +36,11 @@ export default function Learning() {
     const renderCourseCard = ({ item }) => {
         const progress = getCourseProgress(item.id);
 
+
+
         return (
             <TouchableOpacity
-                style={[styles.courseCard, { backgroundColor: item.backgroundColor || '#FFD8B9' }]}
+                style={[styles.courseCard, { backgroundColor: '#fff' }]}
                 onPress={() => handleCoursePress(item)}
             >
                 <View style={styles.iconContainer}>
@@ -59,21 +61,15 @@ export default function Learning() {
         );
     };
 
-    // Handle course card press - Navigate to course detail page with the course data
+    // Update the handleCoursePress function in your learning.jsx file
     const handleCoursePress = (course) => {
         // Log what we're doing
         console.log(`Navigating to ${course.title} course with ID: ${course.id}`);
-        console.log(`This course has ${course.signs?.length || 0} signs`);
-
-        // Make sure the course has signs
-        if (!course.signs || course.signs.length === 0) {
-            console.warn(`Warning - Course ${course.id} has no signs`);
-        }
 
         try {
-            // Use a consistent navigation approach with dynamic routes
+            // Use the new course details page instead of the old direct course view
             router.push({
-                pathname: '/courseView/[id]',
+                pathname: '/courseView/courseDetails',
                 params: { id: course.id }
             });
         } catch (error) {
@@ -99,9 +95,11 @@ export default function Learning() {
         );
     }
 
+
+
     return (
         <SafeAreaView style={styles.container}>
-            <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
+            <StatusBar backgroundColor="#D0F3DA" barStyle="dark-content" />
 
             <Text style={styles.pageTitle}>Explore</Text>
 

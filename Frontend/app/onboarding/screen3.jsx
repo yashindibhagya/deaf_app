@@ -26,13 +26,10 @@ export default function OnboardingScreen3() {
     const handleGetStarted = async () => {
         try {
             // Mark user as not new anymore - onboarding completed
-            await AsyncStorage.setItem("isNewUser", "false");
+            await AsyncStorage.setItem("onboardingComplete", "true");
 
             // Navigate to home tab
-            router.replace("/(tabs)");
-
-            // Log for debugging
-            console.log("Get Started button pressed, navigating to home");
+            router.replace("/(tabs)/home");
         } catch (error) {
             console.error("Error updating user status:", error);
             Alert.alert("Error", "Something went wrong. Please try again.");
@@ -41,10 +38,7 @@ export default function OnboardingScreen3() {
 
     // Navigate to the previous onboarding screen
     const handleBack = () => {
-        router.push("/onboarding/screen2");
-
-        // Log for debugging
-        console.log("Back button pressed, navigating to screen 2");
+        router.replace("/onboarding/screen2");
     };
 
     return (
@@ -56,7 +50,11 @@ export default function OnboardingScreen3() {
             />
 
             {/* Back button */}
-            <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+            <TouchableOpacity
+                style={styles.backButton}
+                onPress={handleBack}
+                activeOpacity={0.7}
+            >
                 <MaterialIcons name="arrow-back" size={24} color="#155658" />
             </TouchableOpacity>
 
@@ -114,6 +112,7 @@ export default function OnboardingScreen3() {
                 <TouchableOpacity
                     style={styles.getStartedButton}
                     onPress={handleGetStarted}
+                    activeOpacity={0.7}
                 >
                     <Text style={styles.getStartedButtonText}>Get Started</Text>
                 </TouchableOpacity>

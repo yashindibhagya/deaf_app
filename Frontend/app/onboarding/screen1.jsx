@@ -25,13 +25,10 @@ export default function OnboardingScreen1() {
     const handleSkip = async () => {
         try {
             // Mark user as not new anymore - onboarding completed
-            await AsyncStorage.setItem("isNewUser", "false");
+            await AsyncStorage.setItem("onboardingComplete", "true");
 
             // Navigate to home tab
-            router.replace("/(tabs)");
-
-            // Log for debugging
-            console.log("Skip button pressed, navigating to home");
+            router.replace("/(tabs)/home");
         } catch (error) {
             console.error("Error updating user status:", error);
             Alert.alert("Error", "Something went wrong. Please try again.");
@@ -40,11 +37,8 @@ export default function OnboardingScreen1() {
 
     // Navigate to the next onboarding screen
     const handleNext = () => {
-        // Use replace instead of push to prevent back-stacking screens
+        // Use replace for consistent navigation behavior
         router.push("/onboarding/screen2");
-
-        // Log for debugging
-        console.log("Next button pressed, navigating to screen 2");
     };
 
     return (
@@ -87,6 +81,7 @@ export default function OnboardingScreen1() {
                 <TouchableOpacity
                     style={styles.skipButton}
                     onPress={handleSkip}
+                    activeOpacity={0.7}
                 >
                     <Text style={styles.skipButtonText}>Skip</Text>
                 </TouchableOpacity>
@@ -100,6 +95,7 @@ export default function OnboardingScreen1() {
                 <TouchableOpacity
                     style={styles.nextButton}
                     onPress={handleNext}
+                    activeOpacity={0.7}
                 >
                     <Text style={styles.nextButtonText}>Next</Text>
                 </TouchableOpacity>

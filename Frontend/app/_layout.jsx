@@ -6,7 +6,6 @@ import { StatusBar } from "expo-status-bar";
 import { auth } from "../config/firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
 import { ActivityIndicator, View, Text } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 /**
  * AuthProvider component that handles authentication state and redirects
@@ -16,77 +15,49 @@ function AuthProvider({ children }) {
     const router = useRouter();
     const segments = useSegments();
     const [initialized, setInitialized] = useState(false);
-    const [isCheckingNewUser, setIsCheckingNewUser] = useState(true);
-    const [isNewUser, setIsNewUser] = useState(false);
-
-    // Check if this is a new user that needs onboarding
-    useEffect(() => {
-        const checkNewUserStatus = async () => {
-            try {
-                const status = await AsyncStorage.getItem("isNewUser");
-                setIsNewUser(status === "true");
-            } catch (error) {
-                console.error("Error checking new user status:", error);
-                setIsNewUser(false);
-            } finally {
-                setIsCheckingNewUser(false);
-            }
-        };
-
-        checkNewUserStatus();
-    }, []);
 
     useEffect(() => {
-        if (isLoading || isCheckingNewUser) return; // Wait for auth state to be determined
+        if (isLoading) return; // Wait for auth state to be determined
 
         // Get the current segments, which represent the current route path
         const inAuthGroup = segments[0] === 'auth';
         const inTabsGroup = segments[0] === '(tabs)';
         const isWelcomeScreen = segments.length === 1 && segments[0] === '';
-        const inOnboardingGroup = segments[0] === 'onboarding';
 
-        // Avoid redirecting during initial render
+        // Basic logic:
+        // - If user is authenticated and trying to access auth screens, redirect to home
+        // - If user is not authenticated and trying to access protected screens, redirect to welcome
         if (!initialized) {
             setInitialized(true);
-            return;
-        }
-
-        // Don't override navigation during onboarding or direct signup->onboarding flow
-        if (inOnboardingGroup) {
             return;
         }
 
         if (userDetail) {
             // User is signed in
             if (inAuthGroup || isWelcomeScreen) {
-                if (isNewUser && !inOnboardingGroup) {
-                    // New users go through onboarding (but only if they're not already in onboarding)
-                    router.replace('/onboarding/screen1');
-                } else {
-                    // Returning users go straight to home
-                    router.replace('/(tabs)/home');
-                }
+                // Redirect away from auth screens when already signed in
+                router.replace('/(tabs)/home');
             }
         } else {
             // User is not signed in
-            if (inTabsGroup || inOnboardingGroup) {
-                // Redirect to welcome screen if trying to access protected areas
+            if (inTabsGroup) {
+                // Redirect to welcome screen if trying to access protected tabs
                 router.replace('/');
             }
         }
-    }, [userDetail, isLoading, segments, initialized, isNewUser, isCheckingNewUser]);
+    }, [userDetail, isLoading, segments, initialized]);
 
-    // Show loading indicator while determining states
-    if (isLoading || isCheckingNewUser) {
+    // Show loading indicator while determining auth state
+    if (isLoading) {
         return (
-            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: "#D0F3DA" }}>
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                 <ActivityIndicator size="large" color="#155658" />
-                <Text style={{ marginTop: 10, color: "#155658" }}>Loading...</Text>
+                <Text style={{ marginTop: 10 }}>Loading...</Text>
             </View>
         );
     }
 
-    // Once all states are determined, render the app
+    // Once auth state is determined, render the app
     return <>{children}</>;
 }
 
@@ -103,7 +74,7 @@ export default function RootLayout() {
                     <Stack
                         screenOptions={{
                             headerShown: false,
-                            contentStyle: { backgroundColor: '#fff' },
+                            contentStyle: { backgroundColor: '#D0F3DA' },
                             animation: 'slide_from_right',
                         }}
                     />
