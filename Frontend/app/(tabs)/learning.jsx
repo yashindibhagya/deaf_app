@@ -90,7 +90,6 @@ export default function Learning() {
             <Text style={styles.pageTitle}>Explore</Text>
 
             <View style={styles.searchContainer}>
-                <Text style={styles.searchLabel}>Search</Text>
                 <View style={styles.searchInputContainer}>
                     <TextInput
                         style={styles.searchInput}
@@ -101,27 +100,6 @@ export default function Learning() {
                 </View>
             </View>
 
-            <View style={styles.tabContainer}>
-                <TouchableOpacity
-                    style={[styles.tab, activeTab === 'public' && styles.activeTab]}
-                    onPress={() => setActiveTab('public')}
-                >
-                    <Text style={[styles.tabText, activeTab === 'public' && styles.activeTabText]}>
-                        Public
-                    </Text>
-                    {activeTab === 'public' && <View style={styles.activeTabIndicator} />}
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={[styles.tab, activeTab === 'collections' && styles.activeTab]}
-                    onPress={() => setActiveTab('collections')}
-                >
-                    <Text style={[styles.tabText, activeTab === 'collections' && styles.activeTabText]}>
-                        My collections
-                    </Text>
-                    {activeTab === 'collections' && <View style={styles.activeTabIndicator} />}
-                </TouchableOpacity>
-            </View>
         </>
     );
 
@@ -181,18 +159,13 @@ const styles = StyleSheet.create({
     searchContainer: {
         marginBottom: 16,
     },
-    searchLabel: {
-        fontSize: 16,
-        color: '#666666',
-        marginBottom: 8,
-    },
     searchInputContainer: {
         borderWidth: 1,
         borderColor: '#DDDDDD',
         borderRadius: 25,
         paddingHorizontal: 16,
         paddingVertical: 8,
-        backgroundColor: '#F5F5F5',
+        backgroundColor: '#fff',
     },
     searchInput: {
         fontSize: 16,
@@ -260,7 +233,7 @@ const styles = StyleSheet.create({
     },
     progressContainer: {
         height: 4,
-        backgroundColor: 'rgba(255, 255, 255, 0.5)',
+        backgroundColor: 'rgb(255, 255, 255)',
         borderRadius: 2,
         overflow: 'hidden',
         marginBottom: 8,

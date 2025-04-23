@@ -50,7 +50,7 @@ export default function Chapters({ course }) {
                         </View>
 
                         {isChapterCompleted(item) ?
-                            <AntDesign name="checkcircle" size={24} color="black" />
+                            <AntDesign name="checkcircle" size={24} color="green" />
                             : <Ionicons name="play-circle" size={24} color="#3c0061" />
                         }
                     </TouchableOpacity>
