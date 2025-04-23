@@ -96,7 +96,6 @@ export default function CourseDetailsView() {
     const renderChapterItem = ({ item, index }) => {
         // Fix: Check if the sign is completed in user's progress
         const isCompleted = item.signId && userProgress[item.signId]?.completed;
-
         return (
             <TouchableOpacity
                 style={[styles.chapterItem, isCompleted && styles.completedChapterItem]}

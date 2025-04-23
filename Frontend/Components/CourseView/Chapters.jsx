@@ -33,25 +33,33 @@ export default function Chapters({ course }) {
                                 }
                             })
                         }}
-                        style={{
-                            padding: 18,
-                            borderWidth: 0.5,
-                            borderRadius: 15,
-                            marginTop: 10,
-                            display: 'flex',
-                            flexDirection: 'row',
-                            justifyContent: 'space-between',
-                            alignItems: 'center'
-                        }}
+                        style={[
+                            styles.chapterItem,
+                            {
+                                backgroundColor: isChapterCompleted(item)
+                                    ? '#E8F5E9' // Light green for completed chapters
+                                    : course?.backgroundColor || '#FFFFFF', // Use course color for uncompleted chapters
+                            }
+                        ]}
                     >
                         <View style={styles.chapterView}>
-                            <Text style={styles.chapterText}>{index + 1}.</Text>
-                            <Text style={styles.chapterText}>{item.chapterTitle} </Text>
+                            <Text style={[
+                                styles.chapterText,
+                                { color: isChapterCompleted(item) ? '#155658' : '#333' }
+                            ]}>
+                                {index + 1}.
+                            </Text>
+                            <Text style={[
+                                styles.chapterText,
+                                { color: isChapterCompleted(item) ? '#155658' : '#333' }
+                            ]}>
+                                {item.chapterTitle}
+                            </Text>
                         </View>
 
                         {isChapterCompleted(item) ?
-                            <AntDesign name="checkcircle" size={24} color="green" />
-                            : <Ionicons name="play-circle" size={24} color="#3c0061" />
+                            <AntDesign name="checkcircle" size={24} color="#155658" />
+                            : <Ionicons name="play-circle" size={24} color="#155658" />
                         }
                     </TouchableOpacity>
                 )}
@@ -70,8 +78,25 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         fontSize: 25
     },
+    chapterItem: {
+        padding: 18,
+        borderWidth: 0.5,
+        borderColor: 'rgba(0,0,0,0.1)',
+        borderRadius: 15,
+        marginTop: 10,
+        display: 'flex',
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+        elevation: 2,
+    },
     chapterText: {
-        fontSize: 18
+        fontSize: 18,
+        fontWeight: '500',
     },
     chapterView: {
         display: 'flex',
