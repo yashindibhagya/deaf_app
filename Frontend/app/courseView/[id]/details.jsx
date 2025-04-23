@@ -11,11 +11,11 @@ import {
     Image,
     FlatList
 } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons, Feather } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../../config/firebaseConfig';
-import { useVideo } from '../../context/VideoContext';
+import { db } from '../../../config/firebaseConfig';
+import { useVideo } from '../../../context/VideoContext';
 
 export default function CourseDetailsView() {
     const router = useRouter();
@@ -24,7 +24,7 @@ export default function CourseDetailsView() {
 
     const [courseDetails, setCourseDetails] = useState(null);
     const [isLocalLoading, setIsLocalLoading] = useState(true);
-    const [selectedTab, setSelectedTab] = useState('courses');
+    const [selectedTab, setSelectedTab] = useState('chapters');
     const [progress, setProgress] = useState({ completed: 0, total: 0, percentage: 0 });
 
     // Load course details
@@ -41,7 +41,7 @@ export default function CourseDetailsView() {
                 if (!foundCourse && db) {
                     const courseDoc = await getDoc(doc(db, 'Courses', id));
                     if (courseDoc.exists()) {
-                        foundCourse = { ...courseDoc.data(), id };
+                        foundCourse = { ...courseDoc.data(), id: courseId };
                     }
                 }
 
@@ -70,8 +70,8 @@ export default function CourseDetailsView() {
         fetchCourseDetails();
     }, [id, coursesData, userProgress]);
 
-    // Function to navigate to chapter view
-    const navigateToChapter = (sign) => {
+    // Navigate to a specific sign/chapter
+    const handleChapterPress = (sign) => {
         router.push({
             pathname: '/chapterView/[signId]',
             params: { signId: sign.signId, courseId: id }
@@ -88,7 +88,10 @@ export default function CourseDetailsView() {
         // If all signs are completed, go to the first one
         const signToNavigate = nextIncompleteSign || courseDetails.signs[0];
 
-        navigateToChapter(signToNavigate);
+        router.push({
+            pathname: '/chapterView/[signId]',
+            params: { signId: signToNavigate.signId, courseId: id }
+        });
     };
 
     // Render each chapter/sign item
@@ -98,22 +101,36 @@ export default function CourseDetailsView() {
         return (
             <TouchableOpacity
                 style={[styles.chapterItem, isCompleted && styles.completedChapterItem]}
-                onPress={() => navigateToChapter(item)}
+                onPress={() => handleChapterPress(item)}
             >
-                <View style={styles.chapterContent}>
-                    <View style={[
-                        styles.chapterIcon,
-                        isCompleted ? styles.completedIcon : styles.incompleteIcon
-                    ]}>
-                        {isCompleted ? (
-                            <MaterialIcons name="check" size={16} color="#fff" />
-                        ) : (
-                            <Text style={styles.chapterLetter}>{item.word}</Text>
-                        )}
-                    </View>
-
-                    <Text style={styles.chapterTitle}>{item.word}</Text>
+                <View style={[styles.chapterIconContainer, isCompleted && styles.completedChapterIconContainer]}>
+                    {isCompleted ? (
+                        <MaterialIcons name="check" size={16} color="#fff" />
+                    ) : (
+                        <Text style={styles.chapterNumber}>{index + 1}</Text>
+                    )}
                 </View>
+
+                <View style={styles.chapterInfo}>
+                    <Text style={styles.chapterTitle}>
+                        {index + 1}. {item.word}
+                    </Text>
+                    {item.sinhalaWord && (
+                        <Text style={styles.chapterSubtitle}>
+                            {typeof item.sinhalaWord === 'string'
+                                ? item.sinhalaWord
+                                : Array.isArray(item.sinhalaWord)
+                                    ? item.sinhalaWord[0]
+                                    : ''}
+                        </Text>
+                    )}
+                </View>
+
+                <MaterialIcons
+                    name={isCompleted ? "check-circle" : "play-circle-outline"}
+                    size={24}
+                    color={isCompleted ? "#4CAF50" : "#4C9EFF"}
+                />
             </TouchableOpacity>
         );
     };
@@ -163,6 +180,11 @@ export default function CourseDetailsView() {
                     <MaterialIcons name="arrow-back" size={24} color="#333" />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>{courseDetails.title || 'Course Details'}</Text>
+                <View style={styles.headerIcons}>
+                    <TouchableOpacity style={styles.headerIcon}>
+                        <Feather name="bookmark" size={22} color="#333" />
+                    </TouchableOpacity>
+                </View>
             </View>
 
             <ScrollView
@@ -173,74 +195,102 @@ export default function CourseDetailsView() {
                 {/* Course Banner */}
                 <View style={[
                     styles.courseBanner,
-                    { backgroundColor: courseDetails.backgroundColor || '#FFD8B9' }
+                    { backgroundColor: courseDetails.backgroundColor || '#4C9EFF' }
                 ]}>
                     <View style={styles.courseIconContainer}>
                         <Text style={styles.courseIcon}>{courseDetails.icon || '📚'}</Text>
                     </View>
-                    <Text style={styles.courseTitle}>{courseDetails.title || 'Course Title'}</Text>
+                    <View style={styles.courseTitleContainer}>
+                        <Text style={styles.courseTitle}>{courseDetails.title || 'Course Title'}</Text>
+                        <Text style={styles.courseDescription}>{courseDetails.description || ''}</Text>
+                    </View>
                 </View>
 
-                {/* About Course */}
-                <View style={styles.aboutCourseContainer}>
-                    <Text style={styles.aboutCourseTitle}>About Course:</Text>
-                    <Text style={styles.aboutCourseText}>
-                        {courseDetails.description || 'Learn to sign the alphabet from A to Z'}
+                {/* Progress */}
+                <View style={styles.progressContainer}>
+                    <View style={styles.progressHeader}>
+                        <Text style={styles.progressTitle}>Your Progress</Text>
+                        <Text style={styles.progressPercentage}>{progress.percentage}%</Text>
+                    </View>
+
+                    <View style={styles.progressBarContainer}>
+                        <View style={[styles.progressBar, { width: `${progress.percentage}%` }]} />
+                    </View>
+
+                    <Text style={styles.progressDetails}>
+                        {progress.completed} of {progress.total} completed
                     </Text>
                 </View>
 
                 {/* Tabs Navigation */}
                 <View style={styles.tabsContainer}>
                     <TouchableOpacity
-                        style={[styles.tab, selectedTab === 'courses' && styles.activeTab]}
-                        onPress={() => setSelectedTab('courses')}
+                        style={[styles.tab, selectedTab === 'chapters' && styles.activeTab]}
+                        onPress={() => setSelectedTab('chapters')}
                     >
-                        <Text style={[styles.tabText, selectedTab === 'courses' && styles.activeTabText]}>
-                            Courses
+                        <Text style={[styles.tabText, selectedTab === 'chapters' && styles.activeTabText]}>
+                            Chapters
                         </Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                        style={[styles.tab, selectedTab === 'projects' && styles.activeTab]}
-                        onPress={() => setSelectedTab('projects')}
+                        style={[styles.tab, selectedTab === 'info' && styles.activeTab]}
+                        onPress={() => setSelectedTab('info')}
                     >
-                        <Text style={[styles.tabText, selectedTab === 'projects' && styles.activeTabText]}>
-                            Projects
+                        <Text style={[styles.tabText, selectedTab === 'info' && styles.activeTabText]}>
+                            Info
                         </Text>
                     </TouchableOpacity>
                 </View>
 
-                {/* Progress */}
-                <View style={styles.progressContainer}>
-                    <Text style={styles.progressText}>
-                        Complete {progress.percentage}%
-                    </Text>
-                    <View style={styles.progressBarContainer}>
-                        <View
-                            style={[styles.progressBar, { width: `${progress.percentage}%` }]}
-                        />
-                    </View>
-                </View>
-
-                {/* Lessons Counter */}
-                <View style={styles.lessonsCountContainer}>
-                    <MaterialIcons name="menu-book" size={20} color="#4C9EFF" />
-                    <Text style={styles.lessonsCount}>
-                        {courseDetails.signs?.length || 0} Lessons
-                    </Text>
-                </View>
-
                 {/* Chapters List */}
-                {courseDetails.signs && courseDetails.signs.length > 0 ? (
-                    <FlatList
-                        data={courseDetails.signs}
-                        renderItem={renderChapterItem}
-                        keyExtractor={(item) => item.signId}
-                        scrollEnabled={false}
-                        contentContainerStyle={styles.chaptersList}
-                    />
-                ) : (
-                    <Text style={styles.noChaptersText}>No lessons available yet</Text>
+                {selectedTab === 'chapters' && (
+                    <View style={styles.chaptersContainer}>
+                        <View style={styles.chaptersHeader}>
+                            <MaterialIcons name="playlist-play" size={20} color="#4C9EFF" />
+                            <Text style={styles.chaptersTitle}>
+                                {courseDetails.signs?.length || 0} Signs to Learn
+                            </Text>
+                        </View>
+
+                        {courseDetails.signs && courseDetails.signs.length > 0 ? (
+                            <FlatList
+                                data={courseDetails.signs}
+                                renderItem={renderChapterItem}
+                                keyExtractor={(item) => item.signId}
+                                scrollEnabled={false}
+                                contentContainerStyle={styles.chaptersList}
+                            />
+                        ) : (
+                            <Text style={styles.noChaptersText}>No chapters available yet</Text>
+                        )}
+                    </View>
+                )}
+
+                {/* Course Info */}
+                {selectedTab === 'info' && (
+                    <View style={styles.infoContainer}>
+                        <Text style={styles.infoTitle}>About This Course</Text>
+                        <Text style={styles.infoDescription}>
+                            {courseDetails.description || 'No description available.'}
+                        </Text>
+
+                        <Text style={styles.infoTitle}>What You'll Learn</Text>
+                        <View style={styles.learningPoints}>
+                            <View style={styles.learningPoint}>
+                                <MaterialIcons name="check-circle" size={16} color="#4CAF50" />
+                                <Text style={styles.learningPointText}>Learn sign language alphabet</Text>
+                            </View>
+                            <View style={styles.learningPoint}>
+                                <MaterialIcons name="check-circle" size={16} color="#4CAF50" />
+                                <Text style={styles.learningPointText}>Master common signs for everyday use</Text>
+                            </View>
+                            <View style={styles.learningPoint}>
+                                <MaterialIcons name="check-circle" size={16} color="#4CAF50" />
+                                <Text style={styles.learningPointText}>Practice with video demonstrations</Text>
+                            </View>
+                        </View>
+                    </View>
                 )}
             </ScrollView>
 
@@ -311,6 +361,13 @@ const styles = StyleSheet.create({
         marginLeft: 16,
         flex: 1,
     },
+    headerIcons: {
+        flexDirection: 'row',
+    },
+    headerIcon: {
+        padding: 4,
+        marginLeft: 16,
+    },
     scrollView: {
         flex: 1,
     },
@@ -325,42 +382,74 @@ const styles = StyleSheet.create({
         borderRadius: 12,
     },
     courseIconContainer: {
-        width: 40,
-        height: 40,
-        borderRadius: 8,
-        backgroundColor: 'rgba(255, 255, 255, 0.3)',
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 12,
+        marginRight: 16,
     },
     courseIcon: {
-        fontSize: 24,
+        fontSize: 32,
+    },
+    courseTitleContainer: {
+        flex: 1,
     },
     courseTitle: {
         fontSize: 20,
         fontWeight: 'bold',
         color: '#fff',
-    },
-    aboutCourseContainer: {
-        marginHorizontal: 16,
-        marginBottom: 16,
-    },
-    aboutCourseTitle: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#444',
         marginBottom: 4,
     },
-    aboutCourseText: {
+    courseDescription: {
+        fontSize: 14,
+        color: 'rgba(255, 255, 255, 0.9)',
+    },
+    progressContainer: {
+        margin: 16,
+        backgroundColor: '#F5F5F5',
+        borderRadius: 12,
+        padding: 16,
+    },
+    progressHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    progressTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#333',
+    },
+    progressPercentage: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#4CAF50',
+    },
+    progressBarContainer: {
+        height: 8,
+        backgroundColor: '#E0E0E0',
+        borderRadius: 4,
+        overflow: 'hidden',
+    },
+    progressBar: {
+        height: '100%',
+        backgroundColor: '#4CAF50',
+        borderRadius: 4,
+    },
+    progressDetails: {
+        marginTop: 8,
         fontSize: 14,
         color: '#666',
-        lineHeight: 20,
+        textAlign: 'right',
     },
     tabsContainer: {
         flexDirection: 'row',
-        marginHorizontal: 16,
         borderBottomWidth: 1,
-        borderBottomColor: '#eee',
+        borderBottomColor: '#EEEEEE',
+        marginHorizontal: 16,
     },
     tab: {
         paddingVertical: 12,
@@ -373,91 +462,103 @@ const styles = StyleSheet.create({
     },
     tabText: {
         fontSize: 16,
-        color: '#888',
+        color: '#666',
     },
     activeTabText: {
         fontWeight: 'bold',
         color: '#4C9EFF',
     },
-    progressContainer: {
+    chaptersContainer: {
         marginHorizontal: 16,
         marginTop: 16,
     },
-    progressText: {
-        fontSize: 14,
-        fontWeight: '500',
-        color: '#666',
-        marginBottom: 8,
-    },
-    progressBarContainer: {
-        height: 6,
-        backgroundColor: '#eee',
-        borderRadius: 3,
-        overflow: 'hidden',
-    },
-    progressBar: {
-        height: '100%',
-        backgroundColor: '#4CAF50',
-        borderRadius: 3,
-    },
-    lessonsCountContainer: {
+    chaptersHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginHorizontal: 16,
-        marginTop: 24,
-        marginBottom: 12,
+        marginBottom: 16,
     },
-    lessonsCount: {
+    chaptersTitle: {
         fontSize: 16,
         fontWeight: 'bold',
         marginLeft: 8,
         color: '#333',
     },
     chaptersList: {
-        paddingHorizontal: 16,
+        paddingBottom: 16,
     },
     chapterItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
         backgroundColor: '#F5F5F5',
-        borderRadius: 8,
+        borderRadius: 12,
+        padding: 16,
         marginBottom: 8,
-        overflow: 'hidden',
     },
     completedChapterItem: {
         backgroundColor: '#E8F5E9',
     },
-    chapterContent: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 12,
-    },
-    chapterIcon: {
-        width: 24,
-        height: 24,
-        borderRadius: 12,
+    chapterIconContainer: {
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        backgroundColor: '#DDD',
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 12,
     },
-    completedIcon: {
+    completedChapterIconContainer: {
         backgroundColor: '#4CAF50',
     },
-    incompleteIcon: {
-        backgroundColor: '#4C9EFF',
-    },
-    chapterLetter: {
-        color: '#fff',
-        fontWeight: 'bold',
+    chapterNumber: {
         fontSize: 12,
+        fontWeight: 'bold',
+        color: '#666',
+    },
+    chapterInfo: {
+        flex: 1,
     },
     chapterTitle: {
         fontSize: 16,
         fontWeight: '500',
         color: '#333',
     },
+    chapterSubtitle: {
+        fontSize: 14,
+        color: '#666',
+        marginTop: 4,
+    },
     noChaptersText: {
         textAlign: 'center',
         color: '#999',
         padding: 16,
+    },
+    infoContainer: {
+        margin: 16,
+    },
+    infoTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#333',
+        marginTop: 16,
+        marginBottom: 8,
+    },
+    infoDescription: {
+        fontSize: 14,
+        color: '#666',
+        lineHeight: 20,
+    },
+    learningPoints: {
+        marginTop: 8,
+    },
+    learningPoint: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        marginBottom: 8,
+    },
+    learningPointText: {
+        marginLeft: 8,
+        fontSize: 14,
+        color: '#333',
     },
     continueButtonContainer: {
         position: 'absolute',
@@ -472,7 +573,7 @@ const styles = StyleSheet.create({
     continueButton: {
         backgroundColor: '#4C9EFF',
         paddingVertical: 14,
-        borderRadius: 8,
+        borderRadius: 12,
         alignItems: 'center',
     },
     continueButtonText: {

@@ -20,17 +20,17 @@ export default function Learning() {
     const [searchQuery, setSearchQuery] = useState('');
 
     // Debug logging to see available courses when component mounts
-    useEffect(() => {
-        if (coursesData && coursesData.length > 0) {
-            console.log('Available courses:',
-                coursesData.map(c => ({
-                    id: c.id,
-                    title: c.title,
-                    signsCount: c.signs?.length || 0
-                }))
-            );
-        }
-    }, [coursesData]);
+    //useEffect(() => {
+    // if (coursesData && coursesData.length > 0) {
+    //    console.log('Available courses:',
+    //        coursesData.map(c => ({
+    //            id: c.id,
+    //            title: c.title,
+    //           signsCount: c.signs?.length || 0
+    //        }))
+    //   );
+    //  }
+    // }, [coursesData]);
 
     // Function to render each course card
     const renderCourseCard = ({ item }) => {
@@ -141,10 +141,11 @@ export default function Learning() {
                 <FlatList
                     data={filteredCourses}
                     renderItem={renderCourseCard}
-                    keyExtractor={(item) => item.id}
+                    keyExtractor={(item) => item.docId || item.id || Math.random().toString()}
                     contentContainerStyle={styles.courseList}
                     numColumns={2}
                     showsVerticalScrollIndicator={false}
+                    columnWrapperStyle={styles.row}
                 />
             ) : (
                 <View style={styles.noCoursesContainer}>
@@ -162,6 +163,7 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#D0F3DA',
         padding: 25,
+        //top: 30,
     },
     loadingContainer: {
         flex: 1,
@@ -279,5 +281,9 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#666666',
         textAlign: 'center',
+    },
+    row: {
+        justifyContent: 'space-between',
+        //marginBottom: 10,
     },
 });

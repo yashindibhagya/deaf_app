@@ -1,5 +1,7 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { doc, setDoc, updateDoc, arrayUnion, getDoc } from 'firebase/firestore';
+import { auth, db } from '../config/firebaseConfig';
 
 // Service for loading sign data
 import { loadAllSignData } from '../services/signDataService';
@@ -16,24 +18,16 @@ export const VideoProvider = ({ children }) => {
     // Cache of attempted but failed video URLs
     const [failedVideoUrls, setFailedVideoUrls] = useState({});
 
+    // Load user progress and sign data on component mount
     useEffect(() => {
-        const fetchSignsData = async () => {
+        const loadData = async () => {
             try {
                 setIsLoading(true);
 
-                // Load user progress from AsyncStorage
-                const cachedProgress = await AsyncStorage.getItem('userProgress');
-                if (cachedProgress) {
-                    setUserProgress(JSON.parse(cachedProgress));
-                }
+                // Start by loading user progress
+                await loadUserProgress();
 
-                // Load failed URL cache
-                const cachedFailedUrls = await AsyncStorage.getItem('failedVideoUrls');
-                if (cachedFailedUrls) {
-                    setFailedVideoUrls(JSON.parse(cachedFailedUrls));
-                }
-
-                // Load all sign data from the service
+                // Then load sign data
                 const { signs, courses } = await loadAllSignData();
 
                 if (signs) {
@@ -51,8 +45,52 @@ export const VideoProvider = ({ children }) => {
             }
         };
 
-        fetchSignsData();
+        loadData();
     }, []);
+
+    // Load user progress from AsyncStorage and Firebase if available
+    const loadUserProgress = async () => {
+        try {
+            // First try to load from AsyncStorage for quick start
+            const cachedProgress = await AsyncStorage.getItem('userProgress');
+            const initialProgress = cachedProgress ? JSON.parse(cachedProgress) : {};
+            setUserProgress(initialProgress);
+
+            // Load failed URL cache
+            const cachedFailedUrls = await AsyncStorage.getItem('failedVideoUrls');
+            if (cachedFailedUrls) {
+                setFailedVideoUrls(JSON.parse(cachedFailedUrls));
+            }
+
+            // Then try to sync with Firebase if user is logged in
+            if (auth.currentUser) {
+                const userDoc = await getDoc(doc(db, 'users', auth.currentUser.uid));
+
+                if (userDoc.exists()) {
+                    // Get progress subcollection
+                    const progressSnapshot = await db.collection('users')
+                        .doc(auth.currentUser.uid)
+                        .collection('progress')
+                        .get();
+
+                    const firebaseProgress = {};
+                    progressSnapshot.forEach(doc => {
+                        firebaseProgress[doc.id] = doc.data();
+                    });
+
+                    // Merge with local progress, prioritizing Firebase data
+                    const mergedProgress = { ...initialProgress, ...firebaseProgress };
+                    setUserProgress(mergedProgress);
+
+                    // Update AsyncStorage with merged data
+                    await AsyncStorage.setItem('userProgress', JSON.stringify(mergedProgress));
+                }
+            }
+        } catch (err) {
+            console.error('Error loading user progress:', err);
+            // Continue with whatever progress we have
+        }
+    };
 
     // Record a failed video URL attempt
     const recordFailedVideoUrl = async (url) => {
@@ -73,20 +111,70 @@ export const VideoProvider = ({ children }) => {
         }
     };
 
-    // Helper function to mark a sign as completed
+    // In VideoContext.jsx - Update the markSignAsCompleted function
     const markSignAsCompleted = async (signId) => {
+        if (!signId) return false;
+
         try {
-            const updatedProgress = { ...userProgress };
+            const now = new Date().toISOString();
+            const completionData = {
+                completed: true,
+                completedAt: now
+            };
 
-            if (!updatedProgress[signId]) {
-                updatedProgress[signId] = {
-                    completed: true,
-                    completedAt: new Date().toISOString()
-                };
+            // Update local state
+            const updatedProgress = {
+                ...userProgress,
+                [signId]: completionData
+            };
 
-                // Save to state and storage
-                setUserProgress(updatedProgress);
-                await AsyncStorage.setItem('userProgress', JSON.stringify(updatedProgress));
+            setUserProgress(updatedProgress);
+
+            // Save to AsyncStorage
+            await AsyncStorage.setItem('userProgress', JSON.stringify(updatedProgress));
+
+            // If user is logged in, also save to Firebase
+            if (auth.currentUser) {
+                // Save to user's progress collection
+                await setDoc(
+                    doc(db, 'users', auth.currentUser.uid, 'progress', signId),
+                    completionData,
+                    { merge: true }
+                );
+
+                // Find courses this sign belongs to
+                const coursesWithSign = coursesData.filter(
+                    course => course.signs?.some(sign => sign.signId === signId)
+                );
+
+                // Update each course
+                for (const course of coursesWithSign) {
+                    if (course.id) {
+                        try {
+                            // Check if document exists
+                            const courseDocRef = doc(db, 'Courses', course.id);
+                            const courseSnap = await getDoc(courseDocRef);
+
+                            if (courseSnap.exists()) {
+                                // Update existing document
+                                await updateDoc(courseDocRef, {
+                                    completedChapter: arrayUnion(signId)
+                                });
+                            } else {
+                                // Create new document with initial data
+                                await setDoc(courseDocRef, {
+                                    id: course.id,
+                                    title: course.title || '',
+                                    description: course.description || '',
+                                    completedChapter: [signId]
+                                });
+                            }
+                        } catch (err) {
+                            console.error(`Error with course ${course.id}:`, err);
+                            // Continue with other courses
+                        }
+                    }
+                }
             }
 
             return true;
@@ -96,77 +184,71 @@ export const VideoProvider = ({ children }) => {
         }
     };
 
-    // Helper function to get course progress
+    // Get progress for a specific course
     const getCourseProgress = (courseId) => {
         const course = coursesData.find(c => c.id === courseId);
         if (!course) return { completed: 0, total: 0, percentage: 0 };
 
-        const signIds = course.signs.map(sign => sign.signId);
+        const signIds = course.signs?.map(sign => sign.signId) || [];
         const completedCount = signIds.filter(id => userProgress[id]?.completed).length;
+        const total = signIds.length;
 
         return {
             completed: completedCount,
-            total: course.totalChapters || signIds.length,
-            percentage: signIds.length > 0 ? Math.round((completedCount / signIds.length) * 100) : 0
+            total: total,
+            percentage: total > 0 ? Math.round((completedCount / total) * 100) : 0
         };
     };
 
-    // Improved findSignForPhrase function with CloudinaryUtils and multi-language support
-    const findSignForPhrase = (phrase) => {
-        if (!phrase || phrase.trim() === '') return null;
-
-        const searchPhrase = phrase.toLowerCase().trim();
-
-        // Try to find an exact match first
-        let sign = signsData.find(sign => {
-            const signWord = sign.word ? sign.word.toLowerCase() : '';
-            return signWord === searchPhrase ||
-                (sign.sinhalaTranslit && (typeof sign.sinhalaTranslit === 'string'
-                    ? sign.sinhalaTranslit.toLowerCase() === searchPhrase
-                    : sign.sinhalaTranslit.some(t => t.toLowerCase() === searchPhrase))) ||
-                (sign.tamilTranslit && (typeof sign.tamilTranslit === 'string'
-                    ? sign.tamilTranslit.toLowerCase() === searchPhrase
-                    : sign.tamilTranslit.some(t => t.toLowerCase() === searchPhrase)));
-        });
-
-        // Validate the sign has a valid videoUrl before returning
-        if (sign && sign.videoUrl && typeof sign.videoUrl === 'string') {
-            return sign;
-        } else if (sign) {
-            // Try to update the URL using CloudinaryUtils
-            sign.videoUrl = CloudinaryUtils.getSignVideoUrl(phrase);
-            if (sign.videoUrl) return sign;
-            return null;
-        }
-
-        // If no exact match, try partial match
-        sign = signsData.find(sign => {
-            if (!sign.word) return false;  // Skip if the sign doesn't have a word property
-
-            const signWord = sign.word.toLowerCase();
-            // Check if the search phrase contains the sign word or vice versa
-            return (signWord.includes(searchPhrase) || searchPhrase.includes(signWord)) &&
-                sign.videoUrl && typeof sign.videoUrl === 'string';
-        });
-
-        if (sign) {
-            return sign;
-        }
-
-        // If no match found in the database, try to dynamically generate a sign with URL
-        const videoUrl = CloudinaryUtils.getSignVideoUrl(phrase);
-        if (videoUrl) {
-            // Create a temporary sign object
+    // Get all courses with their progress information
+    const getCoursesWithProgress = () => {
+        return coursesData.map(course => {
+            const progress = getCourseProgress(course.id);
             return {
-                word: phrase,
-                videoUrl: videoUrl,
-                thumbnailUrl: CloudinaryUtils.getSignThumbnailUrl(phrase),
-                category: 'generated',
-                signId: `${searchPhrase.replace(/\s+/g, '-')}-gen`
+                ...course,
+                progress
             };
-        }
+        });
+    };
 
-        return null;
+    // Check if a specific sign is completed
+    const isSignCompleted = (signId) => {
+        return !!userProgress[signId]?.completed;
+    };
+
+    // Get sign by ID
+    const getSignById = (signId) => {
+        return signsData.find(sign => sign.signId === signId);
+    };
+
+    // Get course by ID
+    const getCourseById = (courseId) => {
+        return coursesData.find(course => course.id === courseId);
+    };
+
+    // Get signs for a specific category
+    const getSignsByCategory = (category) => {
+        return signsData.filter(sign => sign.category === category);
+    };
+
+    // Get the next incomplete sign in a course
+    const getNextIncompleteSign = (courseId) => {
+        const course = coursesData.find(c => c.id === courseId);
+        if (!course || !course.signs) return null;
+
+        return course.signs.find(sign => !userProgress[sign.signId]?.completed);
+    };
+
+    // Reset progress (for testing)
+    const resetAllProgress = async () => {
+        setUserProgress({});
+        await AsyncStorage.removeItem('userProgress');
+
+        // If user is logged in, also reset Firebase data
+        if (auth.currentUser) {
+            // This would need to delete all documents in the progress subcollection
+            // Implementation depends on Firebase version and structure
+        }
     };
 
     // Improved getSignVideoByWord function with CloudinaryUtils and multi-language support
@@ -230,22 +312,6 @@ export const VideoProvider = ({ children }) => {
         return null;
     };
 
-    const getSignsByCategory = (category) => {
-        return signsData.filter(sign => sign.category === category);
-    };
-
-    // Reset progress (for testing)
-    const resetAllProgress = async () => {
-        setUserProgress({});
-        await AsyncStorage.removeItem('userProgress');
-    };
-
-    // Clear the failed URL cache (for testing or when videos are updated)
-    const clearFailedUrlCache = async () => {
-        setFailedVideoUrls({});
-        await AsyncStorage.removeItem('failedVideoUrls');
-    };
-
     return (
         <VideoContext.Provider
             value={{
@@ -259,10 +325,13 @@ export const VideoProvider = ({ children }) => {
                 getSignsByCategory,
                 markSignAsCompleted,
                 getCourseProgress,
+                getCoursesWithProgress,
+                isSignCompleted,
+                getSignById,
+                getCourseById,
+                getNextIncompleteSign,
                 resetAllProgress,
-                recordFailedVideoUrl,
-                clearFailedUrlCache,
-                findSignForPhrase
+                recordFailedVideoUrl
             }}
         >
             {children}

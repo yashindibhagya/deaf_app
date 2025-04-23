@@ -7,6 +7,8 @@ import {
     SafeAreaView,
     StatusBar,
     useWindowDimensions,
+    ActivityIndicator,
+    Platform
 } from 'react-native';
 import { Video } from 'expo-av';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -16,10 +18,15 @@ export default function SignView() {
     const router = useRouter();
     const { width, height } = useWindowDimensions();
     const { sign, category, index } = useLocalSearchParams();
+
     const videoRef = useRef(null);
     const [signData, setSignData] = useState(null);
     const [isPlaying, setIsPlaying] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
     const [currentSpeed, setCurrentSpeed] = useState(1.0);
+    const [currentIndex, setCurrentIndex] = useState(parseInt(index) || 0);
+    const [categoryData, setCategoryData] = useState(null);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
         // Parse sign data from params if available
@@ -27,102 +34,172 @@ export default function SignView() {
             try {
                 const signInfo = JSON.parse(sign);
                 setSignData(signInfo);
+                setIsLoading(false);
             } catch (error) {
                 console.error("Error parsing sign data:", error);
+                setError("Couldn't load sign data");
+                setIsLoading(false);
             }
+        } else {
+            setError("No sign data provided");
+            setIsLoading(false);
         }
     }, [sign]);
 
     const handlePrevious = () => {
-        // Navigate to previous sign
-        router.back();
+        if (currentIndex > 0 && categoryData?.signs) {
+            const prevIndex = currentIndex - 1;
+            setCurrentIndex(prevIndex);
+            setSignData(categoryData.signs[prevIndex]);
+        } else {
+            // No previous sign - could show message or just return
+            router.back();
+        }
     };
 
     const handleNext = () => {
-        // Navigate to next sign
-        router.back();
+        if (categoryData?.signs && currentIndex < categoryData.signs.length - 1) {
+            const nextIndex = currentIndex + 1;
+            setCurrentIndex(nextIndex);
+            setSignData(categoryData.signs[nextIndex]);
+        } else {
+            // No next sign - could show message or just return
+            router.back();
+        }
     };
 
     const handleSpeedChange = () => {
         // Toggle speed between 0.5, 1.0, and 1.5
         const speeds = [0.5, 1.0, 1.5];
-        const currentIndex = speeds.indexOf(currentSpeed);
-        const nextIndex = (currentIndex + 1) % speeds.length;
-        setCurrentSpeed(speeds[nextIndex]);
+        const currentIndexInSpeeds = speeds.indexOf(currentSpeed);
+        const nextIndex = (currentIndexInSpeeds + 1) % speeds.length;
+        const newSpeed = speeds[nextIndex];
+
+        setCurrentSpeed(newSpeed);
 
         // Apply speed to video if playing
         if (videoRef.current) {
-            videoRef.current.setRateAsync(speeds[nextIndex], true);
+            videoRef.current.setRateAsync(newSpeed, true);
         }
     };
 
     const togglePlayback = async () => {
         if (!videoRef.current) return;
 
-        if (isPlaying) {
-            await videoRef.current.pauseAsync();
-        } else {
-            await videoRef.current.playAsync();
+        try {
+            if (isPlaying) {
+                await videoRef.current.pauseAsync();
+                setIsPlaying(false);
+            } else {
+                await videoRef.current.playAsync();
+                setIsPlaying(true);
+            }
+        } catch (error) {
+            console.error("Error toggling playback:", error);
         }
-        setIsPlaying(!isPlaying);
     };
+
+    if (isLoading) {
+        return (
+            <SafeAreaView style={styles.safeArea}>
+                <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#4C9EFF" />
+                    <Text>Loading sign language video...</Text>
+                </View>
+            </SafeAreaView>
+        );
+    }
+
+    if (error) {
+        return (
+            <SafeAreaView style={styles.safeArea}>
+                <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
+                <View style={styles.errorContainer}>
+                    <MaterialIcons name="error-outline" size={48} color="#F44336" />
+                    <Text style={styles.errorText}>{error}</Text>
+                    <TouchableOpacity style={styles.backButtonLarge} onPress={() => router.back()}>
+                        <Text style={styles.backButtonText}>Go Back</Text>
+                    </TouchableOpacity>
+                </View>
+            </SafeAreaView>
+        );
+    }
 
     return (
         <SafeAreaView style={styles.safeArea}>
             <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
 
+            {/* Header with back button and title */}
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                     <MaterialIcons name="arrow-back" size={24} color="#000" />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>{signData?.word || category || "Alphabet"}</Text>
+                <Text style={styles.headerTitle}>{category || "Alphabet"}</Text>
             </View>
 
+            {/* Main video container */}
             <View style={styles.videoContainer}>
                 <Video
                     ref={videoRef}
-                    source={{ uri: signData?.videoUrl || "https://res.cloudinary.com/dxjb5lepy/video/upload/v1742644990/a_bcg3yg.mp4" }}
+                    source={{ uri: signData?.videoUrl }}
                     style={styles.video}
                     useNativeControls={false}
                     resizeMode="contain"
-                    isLooping
-                    onPlaybackStatusUpdate={status => setIsPlaying(status.isPlaying)}
+                    isLooping={true}
+                    onPlaybackStatusUpdate={(status) => {
+                        if (status.isLoaded) {
+                            setIsPlaying(status.isPlaying);
+                        }
+                    }}
                     rate={currentSpeed}
                 />
 
+                {/* Video control overlay */}
+                <View style={styles.videoControls}>
+                    <TouchableOpacity
+                        style={styles.playPauseButton}
+                        onPress={togglePlayback}
+                    >
+                        <MaterialIcons
+                            name={isPlaying ? "pause" : "play-arrow"}
+                            size={36}
+                            color="#fff"
+                        />
+                    </TouchableOpacity>
+                </View>
+
+                {/* Current sign label at bottom of video */}
                 <View style={styles.signLabel}>
                     <Text style={styles.signText}>{signData?.word || "A"}</Text>
                 </View>
-
-                <TouchableOpacity
-                    style={styles.expandButton}
-                    onPress={togglePlayback}
-                >
-                    <MaterialIcons name={isPlaying ? "pause" : "play-arrow"} size={24} color="#000" />
-                </TouchableOpacity>
             </View>
 
+            {/* Navigation section below video */}
             <View style={styles.navigationContainer}>
+                {/* Current sign indicator */}
                 <Text style={styles.currentSignText}>Current sign</Text>
                 <Text style={styles.signLetter}>{signData?.word || "A"}</Text>
 
+                {/* Previous/Next buttons */}
                 <View style={styles.navButtonsContainer}>
                     <TouchableOpacity
                         style={styles.navButton}
                         onPress={handlePrevious}
                     >
-                        <MaterialIcons name="arrow-back" size={24} color="#000" />
+                        <MaterialIcons name="chevron-left" size={30} color="black" />
                     </TouchableOpacity>
 
                     <TouchableOpacity
                         style={styles.navButton}
                         onPress={handleNext}
                     >
-                        <MaterialIcons name="arrow-forward" size={24} color="#000" />
+                        <MaterialIcons name="chevron-right" size={30} color="black" />
                     </TouchableOpacity>
                 </View>
             </View>
 
+            {/* Tools section at bottom */}
             <View style={styles.toolsContainer}>
                 <TouchableOpacity style={styles.toolButton} onPress={handleSpeedChange}>
                     <View style={styles.toolIconContainer}>
@@ -154,20 +231,52 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#fff',
     },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    errorContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    errorText: {
+        fontSize: 18,
+        marginVertical: 10,
+        textAlign: 'center',
+        color: '#666',
+    },
+    backButtonLarge: {
+        backgroundColor: '#4C9EFF',
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadius: 8,
+        marginTop: 20,
+    },
+    backButtonText: {
+        color: '#fff',
+        fontWeight: 'bold',
+    },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 16,
-        paddingVertical: 12,
+        paddingVertical: 8,
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
     },
     backButton: {
-        padding: 8,
+        paddingVertical: 8,
+        paddingRight: 16, // More touch area
     },
     headerTitle: {
-        fontSize: 20,
+        fontSize: 18,
         fontWeight: 'bold',
-        textAlign: 'center',
         flex: 1,
+        textAlign: 'center',
+        marginRight: 40, // Balance the back button
     },
     videoContainer: {
         flex: 1,
@@ -180,6 +289,21 @@ const styles = StyleSheet.create({
         width: '100%',
         height: '100%',
     },
+    videoControls: {
+        position: 'absolute',
+        justifyContent: 'center',
+        alignItems: 'center',
+        width: '100%',
+        height: '100%',
+    },
+    playPauseButton: {
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
     signLabel: {
         position: 'absolute',
         bottom: 20,
@@ -191,13 +315,6 @@ const styles = StyleSheet.create({
     signText: {
         fontSize: 18,
         fontWeight: 'bold',
-    },
-    expandButton: {
-        position: 'absolute',
-        bottom: 80,
-        backgroundColor: 'rgba(255, 255, 255, 0.8)',
-        padding: 10,
-        borderRadius: 25,
     },
     navigationContainer: {
         padding: 16,
@@ -221,14 +338,14 @@ const styles = StyleSheet.create({
         marginTop: 8,
     },
     navButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        width: 50,
+        height: 50,
+        borderRadius: 25,
         borderWidth: 1,
         borderColor: '#ccc',
         justifyContent: 'center',
         alignItems: 'center',
-        marginHorizontal: 16,
+        marginHorizontal: 20,
     },
     toolsContainer: {
         flexDirection: 'row',
