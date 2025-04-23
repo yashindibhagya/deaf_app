@@ -16,6 +16,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../config/firebaseConfig';
 import { useVideo } from '../../context/VideoContext';
+import Button from '../../Components/Shared/Button';
 
 export default function CourseDetailsView() {
     const router = useRouter();
@@ -93,28 +94,30 @@ export default function CourseDetailsView() {
 
     // Render each chapter/sign item
     const renderChapterItem = ({ item, index }) => {
-        const isCompleted = userProgress[item.signId]?.completed;
+        // Fix: Check if the sign is completed in user's progress
+        const isCompleted = item.signId && userProgress[item.signId]?.completed;
 
         return (
             <TouchableOpacity
                 style={[styles.chapterItem, isCompleted && styles.completedChapterItem]}
                 onPress={() => navigateToChapter(item)}
             >
-                <View style={styles.chapterContent}>
-                    <View style={[
-                        styles.chapterIcon,
-                        isCompleted ? styles.completedIcon : styles.incompleteIcon
-                    ]}>
-                        {isCompleted ? (
-                            <MaterialIcons name="check" size={16} color="#fff" />
-                        ) : (
-                            <Text style={styles.chapterLetter}>{item.word}</Text>
-                        )}
-                    </View>
 
-                    <Text style={styles.chapterTitle}>{item.word}</Text>
+                <View style={styles.chapterInfo}>
+
+                    <MaterialIcons
+                        name={isCompleted ? "check-circle" : "play-circle-outline"}
+                        size={24}
+                        color={isCompleted ? "#4CAF50" : "#F7B316"}
+                    />
+
+                    <Text style={[styles.chapterTitle, isCompleted && styles.completedChapterTitle]}
+                    >
+                        {item.word}
+                    </Text>
+
                 </View>
-            </TouchableOpacity>
+            </TouchableOpacity >
         );
     };
 
@@ -155,60 +158,29 @@ export default function CourseDetailsView() {
 
     return (
         <SafeAreaView style={styles.container}>
-            <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
-
-            {/* Header */}
-            <View style={styles.header}>
-                <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-                    <MaterialIcons name="arrow-back" size={24} color="#333" />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>{courseDetails.title || 'Course Details'}</Text>
-            </View>
+            <StatusBar backgroundColor="#D0F3DA" barStyle="dark-content" />
 
             <ScrollView
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
             >
+
                 {/* Course Banner */}
                 <View style={[
                     styles.courseBanner,
-                    { backgroundColor: courseDetails.backgroundColor || '#FFD8B9' }
+                    { backgroundColor: '#155658' }
                 ]}>
+                    <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+                        <MaterialIcons name="arrow-back" size={24} color="#fff" />
+                    </TouchableOpacity>
+
                     <View style={styles.courseIconContainer}>
                         <Text style={styles.courseIcon}>{courseDetails.icon || '📚'}</Text>
                     </View>
                     <Text style={styles.courseTitle}>{courseDetails.title || 'Course Title'}</Text>
                 </View>
 
-                {/* About Course */}
-                <View style={styles.aboutCourseContainer}>
-                    <Text style={styles.aboutCourseTitle}>About Course:</Text>
-                    <Text style={styles.aboutCourseText}>
-                        {courseDetails.description || 'Learn to sign the alphabet from A to Z'}
-                    </Text>
-                </View>
-
-                {/* Tabs Navigation */}
-                <View style={styles.tabsContainer}>
-                    <TouchableOpacity
-                        style={[styles.tab, selectedTab === 'courses' && styles.activeTab]}
-                        onPress={() => setSelectedTab('courses')}
-                    >
-                        <Text style={[styles.tabText, selectedTab === 'courses' && styles.activeTabText]}>
-                            Courses
-                        </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={[styles.tab, selectedTab === 'projects' && styles.activeTab]}
-                        onPress={() => setSelectedTab('projects')}
-                    >
-                        <Text style={[styles.tabText, selectedTab === 'projects' && styles.activeTabText]}>
-                            Projects
-                        </Text>
-                    </TouchableOpacity>
-                </View>
 
                 {/* Progress */}
                 <View style={styles.progressContainer}>
@@ -224,7 +196,7 @@ export default function CourseDetailsView() {
 
                 {/* Lessons Counter */}
                 <View style={styles.lessonsCountContainer}>
-                    <MaterialIcons name="menu-book" size={20} color="#4C9EFF" />
+                    <MaterialIcons name="menu-book" size={20} color="#155658" />
                     <Text style={styles.lessonsCount}>
                         {courseDetails.signs?.length || 0} Lessons
                     </Text>
@@ -246,12 +218,11 @@ export default function CourseDetailsView() {
 
             {/* Continue Learning Button */}
             <View style={styles.continueButtonContainer}>
-                <TouchableOpacity
-                    style={styles.continueButton}
+                <Button
+                    text="Continue Learning"
                     onPress={handleContinueLearning}
-                >
-                    <Text style={styles.continueButtonText}>Continue Learning</Text>
-                </TouchableOpacity>
+                    style={styles.button}
+                />
             </View>
         </SafeAreaView>
     );
@@ -260,7 +231,8 @@ export default function CourseDetailsView() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
+        backgroundColor: '#D0F3DA',
+        marginTop: 50
     },
     loadingContainer: {
         flex: 1,
@@ -304,11 +276,13 @@ const styles = StyleSheet.create({
     },
     backButton: {
         padding: 4,
+        //marginTop: 20
+        marginLeft: -10
     },
     headerTitle: {
         fontSize: 18,
         fontWeight: 'bold',
-        marginLeft: 16,
+        marginLeft: 19,
         flex: 1,
     },
     scrollView: {
@@ -323,15 +297,17 @@ const styles = StyleSheet.create({
         padding: 16,
         margin: 16,
         borderRadius: 12,
+        height: 100
     },
     courseIconContainer: {
         width: 40,
         height: 40,
         borderRadius: 8,
-        backgroundColor: 'rgba(255, 255, 255, 0.3)',
+        backgroundColor: 'rgb(255, 255, 255)',
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 12,
+        marginLeft: 10
     },
     courseIcon: {
         fontSize: 24,
@@ -384,20 +360,20 @@ const styles = StyleSheet.create({
         marginTop: 16,
     },
     progressText: {
-        fontSize: 14,
+        fontSize: 16,
         fontWeight: '500',
-        color: '#666',
+        color: '#000',
         marginBottom: 8,
     },
     progressBarContainer: {
-        height: 6,
-        backgroundColor: '#eee',
+        height: 10,
+        backgroundColor: '#fff',
         borderRadius: 3,
         overflow: 'hidden',
     },
     progressBar: {
         height: '100%',
-        backgroundColor: '#4CAF50',
+        backgroundColor: '#F7B316',
         borderRadius: 3,
     },
     lessonsCountContainer: {
@@ -417,42 +393,36 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
     },
     chapterItem: {
-        backgroundColor: '#F5F5F5',
+        backgroundColor: '#fff',
         borderRadius: 8,
         marginBottom: 8,
         overflow: 'hidden',
+        height: 60,
+        flexDirection: 'row'
     },
     completedChapterItem: {
-        backgroundColor: '#E8F5E9',
+        // backgroundColor: '#E8F5E9',
+        backgroundColor: '#155658',
+
     },
     chapterContent: {
         flexDirection: 'row',
         alignItems: 'center',
         padding: 12,
     },
-    chapterIcon: {
-        width: 24,
-        height: 24,
-        borderRadius: 12,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: 12,
-    },
-    completedIcon: {
-        backgroundColor: '#4CAF50',
-    },
-    incompleteIcon: {
-        backgroundColor: '#4C9EFF',
-    },
-    chapterLetter: {
-        color: '#fff',
-        fontWeight: 'bold',
-        fontSize: 12,
-    },
     chapterTitle: {
         fontSize: 16,
-        fontWeight: '500',
-        color: '#333',
+        fontWeight: '600',
+        color: '#000',
+    },
+    completedChapterTitle: {
+        color: '#fff',
+    },
+    chapterInfo: {
+        padding: 10,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5
     },
     noChaptersText: {
         textAlign: 'center',
@@ -464,10 +434,9 @@ const styles = StyleSheet.create({
         bottom: 0,
         left: 0,
         right: 0,
-        padding: 16,
+        padding: 10,
         backgroundColor: '#fff',
-        borderTopWidth: 1,
-        borderTopColor: '#eee',
+        borderRadius: 15
     },
     continueButton: {
         backgroundColor: '#4C9EFF',

@@ -3,14 +3,17 @@ import React from 'react'
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
+import { useVideo } from '../../context/VideoContext';
 
 export default function Chapters({ course }) {
     const router = useRouter();
     const { width } = useWindowDimensions();
+    const { userProgress } = useVideo();
 
-    const isChapterCompleted = (index) => {
-        const isCompleted = (course?.completedChapter || []).find(item => item == index);
-        return !!isCompleted;
+    // Correctly check if chapter is completed by checking signId in userProgress
+    const isChapterCompleted = (chapter) => {
+        if (!chapter || !chapter.signId) return false;
+        return !!userProgress[chapter.signId]?.completed;
     };
 
     return (
@@ -46,8 +49,8 @@ export default function Chapters({ course }) {
                             <Text style={styles.chapterText}>{item.chapterTitle} </Text>
                         </View>
 
-                        {isChapterCompleted(index) ?
-                            <AntDesign name="checkcircle" size={24} color="green" />
+                        {isChapterCompleted(item) ?
+                            <AntDesign name="checkcircle" size={24} color="black" />
                             : <Ionicons name="play-circle" size={24} color="#3c0061" />
                         }
                     </TouchableOpacity>

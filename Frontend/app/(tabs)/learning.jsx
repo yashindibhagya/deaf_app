@@ -8,10 +8,11 @@ import {
     SafeAreaView,
     StatusBar,
     TextInput,
-    ActivityIndicator
+    ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useVideo } from '../../context/VideoContext';
+import Common from '../../Components/Container/Common';
 
 export default function Learning() {
     const router = useRouter();
@@ -19,24 +20,9 @@ export default function Learning() {
     const [activeTab, setActiveTab] = useState('public');
     const [searchQuery, setSearchQuery] = useState('');
 
-    // Debug logging to see available courses when component mounts
-    //useEffect(() => {
-    // if (coursesData && coursesData.length > 0) {
-    //    console.log('Available courses:',
-    //        coursesData.map(c => ({
-    //            id: c.id,
-    //            title: c.title,
-    //           signsCount: c.signs?.length || 0
-    //        }))
-    //   );
-    //  }
-    // }, [coursesData]);
-
     // Function to render each course card
     const renderCourseCard = ({ item }) => {
         const progress = getCourseProgress(item.id);
-
-
 
         return (
             <TouchableOpacity
@@ -95,11 +81,11 @@ export default function Learning() {
         );
     }
 
-
-
-    return (
-        <SafeAreaView style={styles.container}>
+    // Header component for the FlatList
+    const ListHeader = () => (
+        <>
             <StatusBar backgroundColor="#D0F3DA" barStyle="dark-content" />
+            <Common />
 
             <Text style={styles.pageTitle}>Explore</Text>
 
@@ -136,22 +122,31 @@ export default function Learning() {
                     {activeTab === 'collections' && <View style={styles.activeTabIndicator} />}
                 </TouchableOpacity>
             </View>
+        </>
+    );
 
+    return (
+        <SafeAreaView style={styles.safeArea}>
             {filteredCourses.length > 0 ? (
                 <FlatList
+                    ListHeaderComponent={ListHeader}
                     data={filteredCourses}
                     renderItem={renderCourseCard}
                     keyExtractor={(item) => item.docId || item.id || Math.random().toString()}
-                    contentContainerStyle={styles.courseList}
+                    contentContainerStyle={{ ...styles.courseList, paddingBottom: 70 }}
                     numColumns={2}
                     showsVerticalScrollIndicator={false}
                     columnWrapperStyle={styles.row}
+                    keyboardShouldPersistTaps="handled"
                 />
             ) : (
-                <View style={styles.noCoursesContainer}>
-                    <Text style={styles.noCoursesText}>
-                        {searchQuery ? `No courses matching "${searchQuery}"` : "No courses available"}
-                    </Text>
+                <View>
+                    <ListHeader />
+                    <View style={styles.noCoursesContainer}>
+                        <Text style={styles.noCoursesText}>
+                            {searchQuery ? `No courses matching "${searchQuery}"` : "No courses available"}
+                        </Text>
+                    </View>
                 </View>
             )}
         </SafeAreaView>
@@ -159,11 +154,18 @@ export default function Learning() {
 }
 
 const styles = StyleSheet.create({
-    container: {
+    safeArea: {
         flex: 1,
         backgroundColor: '#D0F3DA',
         padding: 25,
         //top: 30,
+    },
+    container: {
+        flex: 1,
+        padding: 25,
+    },
+    contentContainer: {
+        paddingBottom: 60, // Add extra bottom padding for nav bar
     },
     loadingContainer: {
         flex: 1,
@@ -284,6 +286,5 @@ const styles = StyleSheet.create({
     },
     row: {
         justifyContent: 'space-between',
-        //marginBottom: 10,
     },
 });

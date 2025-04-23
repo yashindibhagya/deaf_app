@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { doc, setDoc, updateDoc, arrayUnion, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, collection, getDocs, query, where } from 'firebase/firestore';
 import { auth, db } from '../config/firebaseConfig';
 
 // Service for loading sign data
@@ -15,19 +15,16 @@ export const VideoProvider = ({ children }) => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const [userProgress, setUserProgress] = useState({});
-    // Cache of attempted but failed video URLs
     const [failedVideoUrls, setFailedVideoUrls] = useState({});
+    const [hasInitializedProgress, setHasInitializedProgress] = useState(false);
 
-    // Load user progress and sign data on component mount
+    // Load sign data on component mount
     useEffect(() => {
         const loadData = async () => {
             try {
                 setIsLoading(true);
 
-                // Start by loading user progress
-                await loadUserProgress();
-
-                // Then load sign data
+                // Load sign data
                 const { signs, courses } = await loadAllSignData();
 
                 if (signs) {
@@ -37,6 +34,10 @@ export const VideoProvider = ({ children }) => {
                 if (courses) {
                     setCoursesData(courses);
                 }
+
+                // After loading course data, load user progress
+                await loadUserProgress();
+
             } catch (err) {
                 console.error("Error loading sign data:", err);
                 setError(err.message);
@@ -48,47 +49,75 @@ export const VideoProvider = ({ children }) => {
         loadData();
     }, []);
 
+    // Track authentication changes to reload user progress when user logs in/out
+    useEffect(() => {
+        if (!auth) return;
+
+        const unsubscribe = auth.onAuthStateChanged(async (user) => {
+            // Clear progress when user logs out
+            if (!user) {
+                setUserProgress({});
+                await AsyncStorage.removeItem('userProgress');
+                setHasInitializedProgress(false);
+            } else {
+                // Load user progress when user logs in
+                await loadUserProgress();
+            }
+        });
+
+        return () => unsubscribe();
+    }, []);
+
     // Load user progress from AsyncStorage and Firebase if available
     const loadUserProgress = async () => {
         try {
-            // First try to load from AsyncStorage for quick start
-            const cachedProgress = await AsyncStorage.getItem('userProgress');
-            const initialProgress = cachedProgress ? JSON.parse(cachedProgress) : {};
-            setUserProgress(initialProgress);
+            // For new users, ensure we start with empty progress
+            if (!hasInitializedProgress) {
+                // Set initial empty progress
+                setUserProgress({});
+                setHasInitializedProgress(true);
+            }
+
+            // If user is logged in, load progress from Firebase
+            if (auth.currentUser) {
+                try {
+                    // Get progress from user's subcollection
+                    const progressSnapshot = await getDocs(
+                        collection(db, 'users', auth.currentUser.uid, 'progress')
+                    );
+
+                    // Create user progress object from Firebase data
+                    const firebaseProgress = {};
+                    progressSnapshot.forEach(doc => {
+                        firebaseProgress[doc.id] = doc.data();
+                    });
+
+                    // Update state with user's progress
+                    setUserProgress(firebaseProgress);
+
+                    // Save to local storage for offline access
+                    await AsyncStorage.setItem('userProgress', JSON.stringify(firebaseProgress));
+
+                } catch (error) {
+                    console.error('Error getting progress from Firebase:', error);
+                }
+            } else {
+                // For offline use, try to load from AsyncStorage
+                const cachedProgress = await AsyncStorage.getItem('userProgress');
+                if (cachedProgress) {
+                    setUserProgress(JSON.parse(cachedProgress));
+                }
+            }
 
             // Load failed URL cache
             const cachedFailedUrls = await AsyncStorage.getItem('failedVideoUrls');
             if (cachedFailedUrls) {
                 setFailedVideoUrls(JSON.parse(cachedFailedUrls));
             }
-
-            // Then try to sync with Firebase if user is logged in
-            if (auth.currentUser) {
-                const userDoc = await getDoc(doc(db, 'users', auth.currentUser.uid));
-
-                if (userDoc.exists()) {
-                    // Get progress subcollection
-                    const progressSnapshot = await db.collection('users')
-                        .doc(auth.currentUser.uid)
-                        .collection('progress')
-                        .get();
-
-                    const firebaseProgress = {};
-                    progressSnapshot.forEach(doc => {
-                        firebaseProgress[doc.id] = doc.data();
-                    });
-
-                    // Merge with local progress, prioritizing Firebase data
-                    const mergedProgress = { ...initialProgress, ...firebaseProgress };
-                    setUserProgress(mergedProgress);
-
-                    // Update AsyncStorage with merged data
-                    await AsyncStorage.setItem('userProgress', JSON.stringify(mergedProgress));
-                }
-            }
         } catch (err) {
             console.error('Error loading user progress:', err);
-            // Continue with whatever progress we have
+            // Continue with empty progress
+            setUserProgress({});
         }
     };
 
@@ -111,7 +140,7 @@ export const VideoProvider = ({ children }) => {
         }
     };
 
-    // In VideoContext.jsx - Update the markSignAsCompleted function
+    // Mark sign as completed - strictly per-user
     const markSignAsCompleted = async (signId) => {
         if (!signId) return false;
 
@@ -130,51 +159,16 @@ export const VideoProvider = ({ children }) => {
 
             setUserProgress(updatedProgress);
 
-            // Save to AsyncStorage
+            // Save to AsyncStorage for offline use
             await AsyncStorage.setItem('userProgress', JSON.stringify(updatedProgress));
 
-            // If user is logged in, also save to Firebase
+            // If user is logged in, save to Firebase in user's progress collection
             if (auth.currentUser) {
-                // Save to user's progress collection
                 await setDoc(
                     doc(db, 'users', auth.currentUser.uid, 'progress', signId),
                     completionData,
                     { merge: true }
                 );
-
-                // Find courses this sign belongs to
-                const coursesWithSign = coursesData.filter(
-                    course => course.signs?.some(sign => sign.signId === signId)
-                );
-
-                // Update each course
-                for (const course of coursesWithSign) {
-                    if (course.id) {
-                        try {
-                            // Check if document exists
-                            const courseDocRef = doc(db, 'Courses', course.id);
-                            const courseSnap = await getDoc(courseDocRef);
-
-                            if (courseSnap.exists()) {
-                                // Update existing document
-                                await updateDoc(courseDocRef, {
-                                    completedChapter: arrayUnion(signId)
-                                });
-                            } else {
-                                // Create new document with initial data
-                                await setDoc(courseDocRef, {
-                                    id: course.id,
-                                    title: course.title || '',
-                                    description: course.description || '',
-                                    completedChapter: [signId]
-                                });
-                            }
-                        } catch (err) {
-                            console.error(`Error with course ${course.id}:`, err);
-                            // Continue with other courses
-                        }
-                    }
-                }
             }
 
             return true;
@@ -186,17 +180,28 @@ export const VideoProvider = ({ children }) => {
 
     // Get progress for a specific course
     const getCourseProgress = (courseId) => {
+        // Get the course
         const course = coursesData.find(c => c.id === courseId);
         if (!course) return { completed: 0, total: 0, percentage: 0 };
 
+        // Get all sign IDs in this course
         const signIds = course.signs?.map(sign => sign.signId) || [];
+
+        // If there are no signs, return 0 progress
+        if (signIds.length === 0) {
+            return { completed: 0, total: 0, percentage: 0 };
+        }
+
+        // Count completed signs
         const completedCount = signIds.filter(id => userProgress[id]?.completed).length;
-        const total = signIds.length;
+
+        // Calculate percentage
+        const percentage = Math.round((completedCount / signIds.length) * 100);
 
         return {
             completed: completedCount,
-            total: total,
-            percentage: total > 0 ? Math.round((completedCount / total) * 100) : 0
+            total: signIds.length,
+            percentage: percentage
         };
     };
 
@@ -239,19 +244,31 @@ export const VideoProvider = ({ children }) => {
         return course.signs.find(sign => !userProgress[sign.signId]?.completed);
     };
 
-    // Reset progress (for testing)
+    // Reset progress (for testing or user-initiated reset)
     const resetAllProgress = async () => {
         setUserProgress({});
         await AsyncStorage.removeItem('userProgress');
 
-        // If user is logged in, also reset Firebase data
+        // If user is logged in, delete progress documents in Firebase
         if (auth.currentUser) {
-            // This would need to delete all documents in the progress subcollection
-            // Implementation depends on Firebase version and structure
+            try {
+                const progressSnapshot = await getDocs(
+                    collection(db, 'users', auth.currentUser.uid, 'progress')
+                );
+
+                const batch = db.batch();
+                progressSnapshot.forEach(doc => {
+                    batch.delete(doc.ref);
+                });
+
+                await batch.commit();
+            } catch (error) {
+                console.error('Error resetting progress in Firebase:', error);
+            }
         }
     };
 
-    // Improved getSignVideoByWord function with CloudinaryUtils and multi-language support
+    // Get sign video by word
     const getSignVideoByWord = (word) => {
         if (!word || word.trim() === '') return null;
 

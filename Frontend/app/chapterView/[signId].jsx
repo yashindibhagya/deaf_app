@@ -88,26 +88,11 @@ export default function ChapterView() {
 
         setIsUpdating(true);
         try {
-            // First update the local context
+            // Update the course completion status using the context function
+            // This will save to the user's progress collection, not the course document
             await markSignAsCompleted(signId);
 
-            // Add safety check for auth
-            if (courseId && typeof auth !== 'undefined' && auth?.currentUser) {
-                try {
-                    // Check if the course document exists first
-                    const courseDocRef = doc(db, 'Courses', courseId);
-                    const courseDoc = await getDoc(courseDocRef);
-
-                    // Rest of your Firebase code...
-                } catch (courseError) {
-                    console.error(`Error updating course:`, courseError);
-                }
-            } else {
-                console.log("Auth not available or user not logged in - saving progress locally only");
-            }
-
             setIsCompleted(true);
-            //Alert.alert('Success', 'This sign has been marked as completed!');
         } catch (error) {
             console.error('Error marking as completed:', error);
             Alert.alert('Error', 'Failed to update progress. Please try again.');

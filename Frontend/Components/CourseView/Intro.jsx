@@ -5,21 +5,33 @@ import { imageAssets } from '../../constants/Option'
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Button from '../../Components/Shared/Button'
 import { useRouter } from 'expo-router';
+import { useVideo } from '../../context/VideoContext';
 
 export default function Intro({ course }) {
     const router = useRouter();
     const { width } = useWindowDimensions();
+    const { userProgress } = useVideo();
 
     const handleStartNow = () => {
         // Find the first incomplete chapter
-        const completedChapters = course?.completedChapter || [];
         let nextChapterIndex = 0;
 
-        for (let i = 0; i < course?.chapters?.length; i++) {
-            if (!completedChapters.includes(i.toString())) {
-                nextChapterIndex = i;
-                break;
+        // Ensure chapters array exists
+        if (course?.chapters && course.chapters.length > 0) {
+            // Check if any chapter has a signId field
+            const hasSignIds = course.chapters.some(chapter => chapter.signId);
+
+            if (hasSignIds) {
+                // Find first incomplete chapter by checking signId in userProgress
+                for (let i = 0; i < course.chapters.length; i++) {
+                    const chapter = course.chapters[i];
+                    if (chapter.signId && !userProgress[chapter.signId]?.completed) {
+                        nextChapterIndex = i;
+                        break;
+                    }
+                }
             }
+            // If no chapters have signId or all are completed, start from the first one
         }
 
         // Navigate to chapter view
@@ -46,12 +58,12 @@ export default function Intro({ course }) {
                 <View style={styles.chapter}>
                     <Ionicons name="book-outline" size={20} color="#3c0061" />
                     <Text style={styles.chapterText}>
-                        {course?.chapters?.length} Chapters
+                        {course?.chapters?.length || 0} Chapters
                     </Text>
                 </View>
 
                 <Text style={styles.desc}>Description:</Text>
-                <Text style={styles.description}>{course?.description}</Text>
+                <Text style={styles.description}>{course?.description || 'No description available'}</Text>
 
                 <Button
                     text={'Start Now'}
@@ -73,6 +85,7 @@ export default function Intro({ course }) {
 }
 
 const styles = StyleSheet.create({
+    // Styles remain unchanged
     image: {
         height: 280,
         resizeMode: 'cover'
