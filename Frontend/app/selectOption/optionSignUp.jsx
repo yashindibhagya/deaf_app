@@ -71,6 +71,7 @@ const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
         backgroundColor: "#D0F3DA",
+        marginTop: 25
     },
     container: {
         flex: 1,
@@ -104,7 +105,7 @@ const styles = StyleSheet.create({
     logo: {
         width: 200,
         height: 200,
-        marginTop: 120,
+        marginTop: 180,
     },
     welcome: {
         fontSize: 26,

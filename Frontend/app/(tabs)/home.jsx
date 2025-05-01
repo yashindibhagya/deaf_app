@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react";
+// Frontend/app/(tabs)/home.jsx
+import React, { useState, useEffect, useCallback, useContext } from "react";
 import {
     View,
     Text,
@@ -8,21 +9,38 @@ import {
     Image,
     SafeAreaView,
     StatusBar,
-    FlatList,
     RefreshControl,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { useUserDetail } from "../../context/UserDetailContext";
+import { UserDetailContext } from "../../context/UserDetailContext"; // Import the context directly
 import { useVideo } from "../../context/VideoContext";
-import { MaterialIcons } from "@expo/vector-icons";
 import { doc, collection, getDocs, query, orderBy, limit } from "firebase/firestore";
 import { auth, db } from "../../config/firebaseConfig";
 import Common from "../../Components/Container/Common";
+import InProgressCourses from "../../Components/Home/InProgressCourses";
+import NewCourses from "../../Components/Home/NewCourses";
 
 export default function Home() {
     const router = useRouter();
-    const { userDetail } = useUserDetail();
-    const { coursesData, getCourseProgress, getCoursesWithProgress } = useVideo();
+
+    // Use direct context access with fallback for when context is missing
+    const userDetailContext = useContext(UserDetailContext);
+    const userDetail = userDetailContext?.userDetail || { name: "Friend" };
+
+    // Check if video context exists and provide fallbacks
+    let videoContext;
+    try {
+        videoContext = useVideo();
+    } catch (error) {
+        console.warn("Video context not available:", error.message);
+        videoContext = {
+            coursesData: [],
+            getCoursesWithProgress: () => []
+        };
+    }
+
+    const { coursesData, getCoursesWithProgress } = videoContext;
+
     const [inProgressCourses, setInProgressCourses] = useState([]);
     const [notStartedCourses, setNotStartedCourses] = useState([]);
     const [recentConversations, setRecentConversations] = useState([]);
@@ -43,32 +61,42 @@ export default function Home() {
 
     // Load data function that can be called on initial load and refresh
     const loadData = useCallback(async () => {
+        // Handle potential missing context
+        if (!getCoursesWithProgress) {
+            console.warn("getCoursesWithProgress not available");
+            return;
+        }
+
         // Process courses and categorize them
         if (coursesData && coursesData.length > 0) {
-            // Get all courses with progress
-            const coursesWithProgress = getCoursesWithProgress();
+            try {
+                // Get all courses with progress
+                const coursesWithProgress = getCoursesWithProgress();
 
-            // Categorize courses into in-progress and not started
-            const inProgress = [];
-            const notStarted = [];
+                // Categorize courses into in-progress and not started
+                const inProgress = [];
+                const notStarted = [];
 
-            coursesWithProgress.forEach(course => {
-                if (course.progress.completed > 0) {
-                    inProgress.push(course);
-                } else {
-                    notStarted.push(course);
-                }
-            });
+                coursesWithProgress.forEach(course => {
+                    if (course.progress && course.progress.completed > 0) {
+                        inProgress.push(course);
+                    } else {
+                        notStarted.push(course);
+                    }
+                });
 
-            // Sort in-progress courses by completion percentage (descending)
-            inProgress.sort((a, b) => b.progress.percentage - a.progress.percentage);
+                // Sort in-progress courses by completion percentage (descending)
+                inProgress.sort((a, b) => (b.progress?.percentage || 0) - (a.progress?.percentage || 0));
 
-            setInProgressCourses(inProgress);
-            setNotStartedCourses(notStarted);
+                setInProgressCourses(inProgress);
+                setNotStartedCourses(notStarted);
+            } catch (error) {
+                console.error("Error processing courses:", error);
+            }
         }
 
         // Load recent conversations
-        if (auth.currentUser) {
+        if (auth && auth.currentUser) {
             try {
                 const conversationsRef = collection(db, "users", auth.currentUser.uid, "conversations");
                 const q = query(conversationsRef, orderBy("timestamp", "desc"), limit(3));
@@ -98,73 +126,6 @@ export default function Home() {
         setRefreshing(false);
     }, [loadData]);
 
-    // Render a single course item in the horizontal list
-    const renderCourseItem = ({ item }) => (
-        <TouchableOpacity
-            style={[
-                styles.courseCard,
-                { backgroundColor: item.backgroundColor || '#fff' }
-            ]}
-            onPress={() =>
-                router.push({
-                    pathname: '/courseView/courseDetails',
-                    params: { id: item.id }
-                })
-            }
-        >
-            <Text style={styles.courseIcon}>{item.icon || '📚'}</Text>
-            <Text style={styles.courseTitle}>{item.title}</Text>
-            <Text style={styles.courseDescription} numberOfLines={2}>
-                {item.description || `Learn ${item.title.toLowerCase()}`}
-            </Text>
-
-            <View style={styles.progressInfo}>
-                <Text style={styles.chapterCount}>
-                    {item.signs?.length || 0} Chapters
-                </Text>
-                <Text style={styles.completedCount}>
-                    {item.progress.completed} Out of {item.progress.total} Completed
-                </Text>
-            </View>
-
-            <View style={styles.progressBarContainer}>
-                <View
-                    style={[
-                        styles.progressBar,
-                        { width: `${item.progress.percentage}%` }
-                    ]}
-                />
-            </View>
-
-            {item.progress.percentage === 100 && (
-                <View style={styles.completedBadge}>
-                    <MaterialIcons name="check-circle" size={16} color="#FFFFFF" />
-                    <Text style={styles.completedBadgeText}>Completed</Text>
-                </View>
-            )}
-        </TouchableOpacity>
-    );
-
-    // Render a course item for new courses
-    const renderNewCourseItem = ({ item }) => (
-        <TouchableOpacity
-            style={[
-                styles.newCourseCard,
-                { backgroundColor: item.backgroundColor || '#fff' }
-            ]}
-            onPress={() =>
-                router.push({
-                    pathname: '/courseView/courseDetails',
-                    params: { id: item.id }
-                })
-            }
-        >
-            <Text style={styles.courseIconNew}>{item.icon || '📚'}</Text>
-            <Text style={styles.newCourseTitle}>{item.title}</Text>
-
-        </TouchableOpacity>
-    );
-
     return (
         <SafeAreaView style={styles.safeArea}>
             <StatusBar backgroundColor="#D0F3DA" barStyle="dark-content" />
@@ -192,40 +153,8 @@ export default function Home() {
 
                 {/* Progress Section */}
                 <View style={styles.sectionContainer}>
-
-                    {/* Courses In Progress */}
-                    {inProgressCourses.length > 0 ? (
-                        <View>
-                            <Text style={styles.subsectionTitle}>Courses In Progress</Text>
-                            <FlatList
-                                data={inProgressCourses}
-                                renderItem={renderCourseItem}
-                                keyExtractor={item => item.id}
-                                horizontal
-                                showsHorizontalScrollIndicator={false}
-                                contentContainerStyle={styles.horizontalList}
-                            />
-                        </View>
-                    ) : (
-                        <Text style={styles.noProgressText}>
-                            You haven't started any courses yet. Try one below!
-                        </Text>
-                    )}
-
-                    {/* New Courses to Try */}
-                    {notStartedCourses.length > 0 && (
-                        <View style={styles.newCoursesSection}>
-                            <Text style={styles.subsectionTitle}>New Courses to Try</Text>
-                            <FlatList
-                                data={notStartedCourses}
-                                renderItem={renderNewCourseItem}
-                                keyExtractor={item => item.id}
-                                horizontal
-                                showsHorizontalScrollIndicator={false}
-                                contentContainerStyle={styles.horizontalList}
-                            />
-                        </View>
-                    )}
+                    <InProgressCourses courses={inProgressCourses} />
+                    <NewCourses courses={notStartedCourses} />
                 </View>
 
                 {/* Feature Cards */}
@@ -338,116 +267,6 @@ const styles = StyleSheet.create({
         fontWeight: "bold",
         color: "#000",
         marginBottom: 12,
-    },
-    subsectionTitle: {
-        fontSize: 18,
-        fontWeight: "700",
-        color: "#000",
-        marginBottom: 10,
-    },
-    noProgressText: {
-        fontSize: 14,
-        color: "#666",
-        fontStyle: "italic",
-        marginBottom: 20,
-    },
-    horizontalList: {
-        paddingRight: 20,
-        paddingBottom: 5,
-    },
-    courseCard: {
-        width: 200,
-        height: 180,
-        borderRadius: 16,
-        marginRight: 16,
-        padding: 16,
-        position: 'relative',
-    },
-    courseIcon: {
-        fontSize: 30,
-        marginBottom: 8,
-    },
-    courseIconNew: {
-        fontSize: 50,
-        marginBottom: 8,
-        alignSelf: 'center'
-    },
-    courseTitle: {
-        fontSize: 16,
-        fontWeight: "bold",
-        color: "#333",
-        marginBottom: 4,
-    },
-    courseDescription: {
-        fontSize: 12,
-        color: "#555",
-        marginBottom: 10,
-        flex: 1,
-    },
-    progressInfo: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        marginBottom: 6,
-    },
-    chapterCount: {
-        fontSize: 10,
-        color: "#000",
-    },
-    completedCount: {
-        fontSize: 10,
-        color: "#333",
-        fontWeight: "500",
-    },
-    progressBarContainer: {
-        height: 6,
-        backgroundColor: "#F7B316",
-        borderRadius: 3,
-        overflow: "hidden",
-    },
-    progressBar: {
-        height: "100%",
-        backgroundColor: "#155658",
-        borderRadius: 3,
-    },
-    completedBadge: {
-        position: 'absolute',
-        top: 10,
-        right: 10,
-        backgroundColor: '#4CAF50',
-        borderRadius: 12,
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    completedBadgeText: {
-        color: 'white',
-        fontSize: 10,
-        fontWeight: 'bold',
-        marginLeft: 4,
-    },
-    newCoursesSection: {
-        marginTop: 20,
-    },
-    newCourseCard: {
-        width: 140,
-        height: 140,
-        borderRadius: 16,
-        marginRight: 16,
-        padding: 16,
-    },
-    newCourseTitle: {
-        fontSize: 17,
-        fontWeight: "900",
-        color: "#000",
-        marginBottom: 4,
-        marginTop: -5,
-        textAlign: 'center'
-    },
-    newCourseChapters: {
-        fontSize: 12,
-        color: "#333",
-        alignSelf: 'flex-end',
     },
     featureCardsContainer: {
         marginTop: 25,
