@@ -49,7 +49,7 @@ export default function Common({ showBackButton = false, onBack, style = {} }) {
 const styles = StyleSheet.create({
     container: {
         alignItems: "flex-start",
-        marginBottom: 10,
+        marginBottom: 5,
         width: "100%",
         marginTop: 10,
     },

@@ -159,12 +159,9 @@ export default function Home() {
                 })
             }
         >
-            <Text style={styles.courseIcon}>{item.icon || '📚'}</Text>
+            <Text style={styles.courseIconNew}>{item.icon || '📚'}</Text>
             <Text style={styles.newCourseTitle}>{item.title}</Text>
-            <Text style={styles.newCourseDescription} numberOfLines={2}>
-                {item.description}
-            </Text>
-            <Text style={styles.newCourseChapters}>{item.signs?.length || 0}/0</Text>
+
         </TouchableOpacity>
     );
 
@@ -370,6 +367,11 @@ const styles = StyleSheet.create({
         fontSize: 30,
         marginBottom: 8,
     },
+    courseIconNew: {
+        fontSize: 50,
+        marginBottom: 8,
+        alignSelf: 'center'
+    },
     courseTitle: {
         fontSize: 16,
         fontWeight: "bold",
@@ -428,27 +430,24 @@ const styles = StyleSheet.create({
         marginTop: 20,
     },
     newCourseCard: {
-        width: 160,
-        height: 160,
+        width: 140,
+        height: 140,
         borderRadius: 16,
         marginRight: 16,
         padding: 16,
     },
     newCourseTitle: {
-        fontSize: 14,
-        fontWeight: "bold",
-        color: "#333",
+        fontSize: 17,
+        fontWeight: "900",
+        color: "#000",
         marginBottom: 4,
-    },
-    newCourseDescription: {
-        fontSize: 12,
-        color: "#555",
-        flex: 1,
+        marginTop: -5,
+        textAlign: 'center'
     },
     newCourseChapters: {
-        fontSize: 10,
-        color: "#666",
-        alignSelf: "flex-end",
+        fontSize: 12,
+        color: "#333",
+        alignSelf: 'flex-end',
     },
     featureCardsContainer: {
         marginTop: 25,

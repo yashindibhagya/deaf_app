@@ -171,6 +171,7 @@ const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
         backgroundColor: "#D0F3DA",
+        marginTop: 25
     },
     keyboardAvoidingView: {
         flex: 1,
@@ -226,10 +227,9 @@ const styles = StyleSheet.create({
         marginLeft: 5,
     },
     lowerLeaves: {
-        height: 200,
-        width: "100%",
+        //top: 10,
+        height: 300,
         opacity: 0.4,
-        marginTop: 20,
     },
     backButton: {
         position: "absolute",
