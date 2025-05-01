@@ -10,6 +10,7 @@ import {
     SafeAreaView,
     StatusBar,
     RefreshControl,
+    ImageBackground,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { UserDetailContext } from "../../context/UserDetailContext"; // Import the context directly
@@ -144,30 +145,34 @@ export default function Home() {
                 <View style={styles.featureCardsContainer}>
                     {/* Sign to Text Card */}
                     <TouchableOpacity
-                        style={[styles.featureCard, styles.signToTextCard]}
                         onPress={() => router.push("/(tabs)/signToText")}
+                        style={styles.card}
                     >
-                        <View style={styles.featureCardContent}>
-                            <Text style={styles.featureCardTitle}>Sign language - to- Text</Text>
-                        </View>
-                        <Image
-                            source={require("../../assets/images/signtext.png")}
-                            style={styles.featureCardImage}
-                        />
+                        <ImageBackground
+                            source={require("../../assets/images/sign.png")}
+                            style={styles.container}
+                            resizeMode="cover"
+                        >
+                            <View style={styles.contentContainer}>
+                                <Text style={styles.featureCardTitle}>Sign language - to- Text</Text>
+                            </View>
+                        </ImageBackground>
                     </TouchableOpacity>
 
                     {/* Text to Sign Card */}
                     <TouchableOpacity
-                        style={[styles.featureCard, styles.textToSignCard]}
                         onPress={() => router.push("/(tabs)/textToSign")}
+                        style={styles.card}
                     >
-                        <View style={styles.featureCardContent}>
-                            <Text style={styles.featureCardTitle}>Text - to - Sign language</Text>
-                        </View>
-                        <Image
-                            source={require("../../assets/images/textsign.png")}
-                            style={styles.featureCardImage}
-                        />
+                        <ImageBackground
+                            source={require("../../assets/images/text.png")}
+                            style={styles.container}
+                            resizeMode="cover"
+                        >
+                            <View style={styles.contentContainer}>
+                                <Text style={styles.featureCardTitle}>Text - to - Sign language</Text>
+                            </View>
+                        </ImageBackground>
                     </TouchableOpacity>
                 </View>
 
@@ -222,7 +227,7 @@ const styles = StyleSheet.create({
         padding: 25,
     },
     contentContainer: {
-        paddingBottom: 80, // Extra padding for tab bar
+        paddingBottom: 70, // Extra padding for tab bar
     },
     greetingContainer: {
         marginTop: 10,
@@ -252,14 +257,8 @@ const styles = StyleSheet.create({
         marginBottom: 12,
     },
     featureCardsContainer: {
-        marginTop: 25,
-    },
-    featureCard: {
-        flexDirection: "row",
-        alignItems: "center",
-        padding: 15,
-        borderRadius: 16,
-        marginBottom: 15,
+        //marginTop: 25,
+        marginBottom: 30
     },
     signToTextCard: {
         backgroundColor: "#155658",
@@ -275,6 +274,7 @@ const styles = StyleSheet.create({
         fontWeight: "bold",
         color: "#fff",
         paddingRight: 10,
+        top: 45
     },
     featureCardImage: {
         width: 80,
@@ -305,4 +305,9 @@ const styles = StyleSheet.create({
         marginTop: 5,
         textAlign: "right",
     },
+    card: {
+        marginTop: -5
+    }
+
+
 });
