@@ -19,6 +19,7 @@ import { auth, db } from "../../config/firebaseConfig";
 import Common from "../../Components/Container/Common";
 import InProgressCourses from "../../Components/Home/InProgressCourses";
 import NewCourses from "../../Components/Home/NewCourses";
+import Header from "../../Components/Home/Header";
 
 export default function Home() {
     const router = useRouter();
@@ -44,20 +45,7 @@ export default function Home() {
     const [inProgressCourses, setInProgressCourses] = useState([]);
     const [notStartedCourses, setNotStartedCourses] = useState([]);
     const [recentConversations, setRecentConversations] = useState([]);
-    const [greeting, setGreeting] = useState("Good Morning");
     const [refreshing, setRefreshing] = useState(false);
-
-    // Set appropriate greeting based on time of day
-    useEffect(() => {
-        const currentHour = new Date().getHours();
-        if (currentHour < 12) {
-            setGreeting("Good Morning");
-        } else if (currentHour < 18) {
-            setGreeting("Good Afternoon");
-        } else {
-            setGreeting("Good Evening");
-        }
-    }, []);
 
     // Load data function that can be called on initial load and refresh
     const loadData = useCallback(async () => {
@@ -144,12 +132,7 @@ export default function Home() {
             >
                 <Common />
 
-                {/* User Greeting */}
-                <View style={styles.greetingContainer}>
-                    <Text style={styles.greeting}>{greeting},</Text>
-                    <Text style={styles.userName}>{userDetail?.name || "Friend"}</Text>
-                    <Text style={styles.startedText}>Let's Get Started!</Text>
-                </View>
+                <Header />
 
                 {/* Progress Section */}
                 <View style={styles.sectionContainer}>

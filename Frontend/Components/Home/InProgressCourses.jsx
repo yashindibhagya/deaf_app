@@ -1,3 +1,4 @@
+// Frontend/Components/Home/InProgressCourses.jsx
 import React from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -54,12 +55,16 @@ const InProgressCourses = ({ courses }) => {
     );
 
     if (courses.length === 0) {
-        return <WelcomeCard />;
+        return (
+            <Text style={styles.noProgressText}>
+                You haven't started any courses yet. Try one below!
+            </Text>
+        );
     }
 
     return (
         <View>
-            <Text style={styles.subsectionTitle}>Courses In Progress</Text>
+            <Text style={styles.subsectionTitle}>Progress</Text>
             <FlatList
                 data={courses}
                 renderItem={renderCourseItem}
@@ -74,10 +79,11 @@ const InProgressCourses = ({ courses }) => {
 
 const styles = StyleSheet.create({
     subsectionTitle: {
-        fontSize: 18,
-        fontWeight: "700",
+        fontSize: 20,
+        fontWeight: "800",
         color: "#000",
         marginBottom: 10,
+        marginTop: -40
     },
     noProgressText: {
         fontSize: 14,

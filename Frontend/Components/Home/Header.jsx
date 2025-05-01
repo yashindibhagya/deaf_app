@@ -31,8 +31,6 @@ export default function Header() {
                 <Text style={styles.heading}>
                     {userDetail?.name || "Name"}
                 </Text>
-
-                <Text style={styles.started}>Let's Get Started!</Text>
             </View>
         </View>
     );
@@ -53,10 +51,5 @@ const styles = StyleSheet.create({
         fontSize: 28,
         color: "#000",
         marginBottom: 8,
-    },
-    started: {
-        fontSize: 16,
-        color: "#000",
-        fontWeight: "600",
     },
 });

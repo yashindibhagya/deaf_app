@@ -45,8 +45,8 @@ const NewCourses = ({ courses }) => {
 
 const styles = StyleSheet.create({
     subsectionTitle: {
-        fontSize: 18,
-        fontWeight: "700",
+        fontSize: 20,
+        fontWeight: "800",
         color: "#000",
         marginBottom: 10,
     },
