@@ -11,6 +11,7 @@ import {
     Keyboard
 } from 'react-native';
 import { MaterialIcons } from "@expo/vector-icons";
+import { useRouter } from 'expo-router';
 import { useVideo } from '../../context/VideoContext';
 import Common from '../../Components/Container/Common';
 import AllCourses from '../../Components/Learning/AllCourses';
@@ -19,6 +20,7 @@ import SearchResults from '../../Components/Learning/SearchResults';
 import { searchLearningContent } from '../../services/SearchService';
 
 export default function Learning() {
+    const router = useRouter();
     const { coursesData, isLoading, getCourseProgress } = useVideo();
     const [activeTab, setActiveTab] = useState('courses'); // Default to 'courses' tab
     const [searchQuery, setSearchQuery] = useState('');
@@ -94,8 +96,42 @@ export default function Learning() {
         Keyboard.dismiss();
     };
 
-    // Handle search result selection
+    // Handle search result selection - FIX: This function is now implemented
     const handleSearchResultPress = (result) => {
+        // Navigate based on result type
+        switch (result.type) {
+            case 'lesson':
+                router.push({
+                    pathname: '/chapterView/[signId]',
+                    params: {
+                        signId: result.signId,
+                        courseId: result.courseId
+                    }
+                });
+                break;
+            case 'chapter':
+                router.push({
+                    pathname: '/chapterView',
+                    params: {
+                        chapterParams: JSON.stringify({
+                            chapterTitle: result.chapterTitle,
+                            chapterIndex: result.chapterIndex
+                        }),
+                        docId: result.courseId,
+                        chapterIndex: result.chapterIndex
+                    }
+                });
+                break;
+            case 'course':
+                router.push({
+                    pathname: '/courseView/courseDetails',
+                    params: { id: result.courseId }
+                });
+                break;
+            default:
+                break;
+        }
+
         // Clear search after navigating
         setSearchQuery('');
         setIsSearchMode(false);

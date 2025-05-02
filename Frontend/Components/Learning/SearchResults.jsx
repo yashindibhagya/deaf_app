@@ -64,10 +64,15 @@ const SearchResults = ({ courses, searchQuery, onResultPress }) => {
 
             case 'chapter':
                 // Navigate to specific chapter in course
+                // FIX: Ensure we're using the correct path and parameters
                 router.push({
                     pathname: '/chapterView',
                     params: {
-                        courseId: result.courseId,
+                        chapterParams: JSON.stringify({
+                            chapterTitle: result.chapterTitle,
+                            chapterIndex: result.chapterIndex
+                        }),
+                        docId: result.courseId,
                         chapterIndex: result.chapterIndex
                     }
                 });
@@ -75,6 +80,7 @@ const SearchResults = ({ courses, searchQuery, onResultPress }) => {
 
             case 'lesson':
                 // Navigate to specific sign/lesson
+                // FIX: Ensure we're using the correct path and parameters
                 router.push({
                     pathname: '/chapterView/[signId]',
                     params: {

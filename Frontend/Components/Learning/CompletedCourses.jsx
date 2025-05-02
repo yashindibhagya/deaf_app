@@ -61,7 +61,7 @@ const CompletedCourses = ({ courses, searchQuery, onStartLearning }) => {
 
             {/* Achievement Badge for Completed Courses */}
             <View style={styles.achievementBadge}>
-                <MaterialIcons name="star" size={24} color="#FFD700" />
+                <MaterialIcons name="star" size={24} color="#fff" />
                 <Text style={styles.achievementText}>Completed!</Text>
             </View>
         </TouchableOpacity>
@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         top: 10,
         right: 10,
-        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        backgroundColor: '#F7B316',
         borderRadius: 15,
         padding: 5,
         flexDirection: 'row',
@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
     achievementText: {
         fontSize: 12,
         fontWeight: 'bold',
-        color: '#333',
+        color: '#fff',
         marginLeft: 4,
     },
     // Motivation container styles

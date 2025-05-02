@@ -31,6 +31,7 @@ const AllCourses = ({ courses, searchQuery }) => {
     // Render a course item
     const renderCourseCard = ({ item }) => {
         const isInProgress = item.progress && item.progress.completed > 0 && item.progress.percentage < 100;
+        const isCompleted = item.progress && item.progress.percentage === 100;
 
         return (
             <TouchableOpacity
@@ -73,6 +74,14 @@ const AllCourses = ({ courses, searchQuery }) => {
                         <Text style={styles.inProgressText}>In Progress</Text>
                     </View>
                 )}
+
+                {/* Completed Badge - NEW */}
+                {isCompleted && (
+                    <View style={styles.achievementBadge}>
+                        <MaterialIcons name="star" size={24} color="#fff" />
+                        <Text style={styles.achievementText}>Completed!</Text>
+                    </View>
+                )}
             </TouchableOpacity>
         );
     };
@@ -100,7 +109,6 @@ const AllCourses = ({ courses, searchQuery }) => {
             numColumns={2}
             columnWrapperStyle={styles.row}
             showsVerticalScrollIndicator={false}
-
         />
     );
 };
@@ -188,7 +196,29 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#155658',
         marginLeft: 4,
-    }
+    },
+    achievementBadge: {
+        position: 'absolute',
+        top: 10,
+        right: 10,
+        backgroundColor: '#F7B316',
+        borderRadius: 15,
+        padding: 5,
+        flexDirection: 'row',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 3,
+        elevation: 3,
+    },
+    achievementText: {
+        fontSize: 12,
+        fontWeight: 'bold',
+        color: '#fff',
+        marginLeft: 4,
+    },
+
 });
 
 export default AllCourses;

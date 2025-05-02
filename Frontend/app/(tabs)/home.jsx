@@ -153,7 +153,7 @@ export default function Home() {
                             style={styles.container}
                             resizeMode="cover"
                         >
-                            <View style={styles.contentContainer}>
+                            <View style={styles.contentContainerCard}>
                                 <Text style={styles.featureCardTitle}>Sign language - to- Text</Text>
                             </View>
                         </ImageBackground>
@@ -169,7 +169,7 @@ export default function Home() {
                             style={styles.container}
                             resizeMode="cover"
                         >
-                            <View style={styles.contentContainer}>
+                            <View style={styles.contentContainerCard}>
                                 <Text style={styles.featureCardTitle}>Text - to - Sign language</Text>
                             </View>
                         </ImageBackground>
@@ -227,7 +227,10 @@ const styles = StyleSheet.create({
         padding: 25,
     },
     contentContainer: {
-        paddingBottom: 70, // Extra padding for tab bar
+        paddingBottom: 100, // Extra padding for tab bar
+    },
+    contentContainerCard: {
+        paddingBottom: 65, // Extra padding for tab bar
     },
     greetingContainer: {
         marginTop: 10,
@@ -258,7 +261,7 @@ const styles = StyleSheet.create({
     },
     featureCardsContainer: {
         //marginTop: 25,
-        marginBottom: 30
+        //marginBottom: 30
     },
     signToTextCard: {
         backgroundColor: "#155658",
