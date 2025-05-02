@@ -16,14 +16,13 @@ import {
     Animated
 } from 'react-native';
 import { Video } from 'expo-av';
-import { Audio } from 'expo-av'; // Import Audio for voice recording
 import { VideoContext } from '../../context/VideoContext';
 import * as FileSystem from 'expo-file-system';
 import { useRouter } from 'expo-router';
 import * as Speech from 'expo-speech';
 
-// Import the speech recognition service
-import { recognizeSpeech, recognizeSpeechOffline } from '../../services/speechService';
+// Import our new VoiceRecorder component
+import VoiceRecorder from '../../Components/TextToSign/VoiceRecorder';
 
 // Import the translation API services
 import {
@@ -158,30 +157,6 @@ const prefetchVideo = async (url, cacheKey) => {
     }
 };
 
-// Optimized recording options for speech recognition
-const getRecordingOptions = () => {
-    return {
-        android: {
-            extension: '.m4a',
-            outputFormat: Audio.RECORDING_OPTION_ANDROID_OUTPUT_FORMAT_MPEG_4,
-            audioEncoder: Audio.RECORDING_OPTION_ANDROID_AUDIO_ENCODER_AAC,
-            sampleRate: 44100,
-            numberOfChannels: 1, // Mono is better for speech recognition
-            bitRate: 128000,
-        },
-        ios: {
-            extension: '.m4a',
-            audioQuality: Audio.RECORDING_OPTION_IOS_AUDIO_QUALITY_HIGH,
-            sampleRate: 44100,
-            numberOfChannels: 1, // Mono is better for speech recognition
-            bitRate: 128000,
-            linearPCMBitDepth: 16,
-            linearPCMIsBigEndian: false,
-            linearPCMIsFloat: false,
-        },
-    };
-};
-
 export default function TextToSign() {
     const inputRef = useRef(null);
     const scrollViewRef = useRef(null);
@@ -231,543 +206,9 @@ export default function TextToSign() {
 
     const [refreshing, setRefreshing] = useState(false);
 
-    // Voice recording states
-    const [isRecording, setIsRecording] = useState(false);
-    const [recording, setRecording] = useState(null);
-    const [hasRecordingPermission, setHasRecordingPermission] = useState(false);
-    const [recordingStatus, setRecordingStatus] = useState('idle');
-    const [recordingDuration, setRecordingDuration] = useState(0);
-    const durationTimerRef = useRef(null);
-
-    // Animation value for recording indicator pulse
-    const pulseAnim = useRef(new Animated.Value(1)).current;
-
     const router = useRouter();
     const { getSignVideoByWord, isLoading, signsData, recordFailedVideoUrl, findSignForPhrase } = useContext(VideoContext);
     const videoRef = useRef(null);
-
-    // Request microphone permissions on component mount
-    useEffect(() => {
-        (async () => {
-            const { status } = await Audio.requestPermissionsAsync();
-            setHasRecordingPermission(status === 'granted');
-        })();
-
-        // Set up audio recording session
-        Audio.setAudioModeAsync({
-            allowsRecordingIOS: true,
-            playsInSilentModeIOS: true,
-            staysActiveInBackground: false,
-        }).catch(err => console.log('Failed to set audio mode', err));
-
-        // Make sure to clean up recording resources when component unmounts
-        return () => {
-            if (recording) {
-                stopRecording();
-            }
-            if (durationTimerRef.current) {
-                clearInterval(durationTimerRef.current);
-            }
-
-            // Reset audio mode when unmounting
-            Audio.setAudioModeAsync({
-                allowsRecordingIOS: false,
-                playsInSilentModeIOS: false,
-            }).catch(err => console.log('Failed to reset audio mode', err));
-        };
-    }, []);
-
-    // Animation for the recording indicator pulse
-    useEffect(() => {
-        let pulseAnimation;
-        if (isRecording) {
-            // Create a repeating pulse animation
-            pulseAnimation = Animated.loop(
-                Animated.sequence([
-                    Animated.timing(pulseAnim, {
-                        toValue: 1.5,
-                        duration: 500,
-                        useNativeDriver: true,
-                    }),
-                    Animated.timing(pulseAnim, {
-                        toValue: 1,
-                        duration: 500,
-                        useNativeDriver: true,
-                    }),
-                ])
-            );
-
-            // Start the animation
-            pulseAnimation.start();
-        } else {
-            // Reset the animation when not recording
-            Animated.timing(pulseAnim, {
-                toValue: 1,
-                duration: 200,
-                useNativeDriver: true,
-            }).start();
-        }
-
-        // Clean up animation when component unmounts or recording state changes
-        return () => {
-            if (pulseAnimation) {
-                pulseAnimation.stop();
-            }
-        };
-    }, [isRecording, pulseAnim]);
-
-
-    // Start recording audio
-    const startRecording = async () => {
-        try {
-            // Check permissions
-            if (!hasRecordingPermission) {
-                const { status } = await Audio.requestPermissionsAsync();
-                setHasRecordingPermission(status === 'granted');
-                if (status !== 'granted') {
-                    Alert.alert('Permission Required', 'Microphone permission is needed to record audio.');
-                    return;
-                }
-            }
-
-            // First provide feedback to the user
-            if (Platform.OS === 'ios') {
-                // On iOS, haptic feedback
-                try {
-                    const Haptics = await import('expo-haptics');
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                } catch (err) {
-                    console.log('Haptics not available:', err);
-                }
-            }
-
-            // Make sure audio mode is set for recording
-            await Audio.setAudioModeAsync({
-                allowsRecordingIOS: true,
-                playsInSilentModeIOS: true,
-                staysActiveInBackground: false,
-                playThroughEarpieceAndroid: false, // Use speaker
-            });
-
-            // Get optimized recording options for speech recognition
-            const recordingOptions = getRecordingOptions();
-
-            // Initialize recording
-            const newRecording = new Audio.Recording();
-
-            try {
-                // Show that we're getting ready to record
-                setRecordingStatus('preparing');
-                console.log('Preparing to record with options:', recordingOptions);
-
-                // Prepare and start the recording
-                await newRecording.prepareToRecordAsync(recordingOptions);
-                await newRecording.startAsync();
-                console.log('Recording started successfully');
-
-                // Update state after successful start
-                setRecording(newRecording);
-                setIsRecording(true);
-                setRecordingStatus('recording');
-
-                // Reset and start the duration timer
-                setRecordingDuration(0);
-                if (durationTimerRef.current) {
-                    clearInterval(durationTimerRef.current);
-                }
-                durationTimerRef.current = setInterval(() => {
-                    setRecordingDuration(prev => {
-                        // Add maximum recording duration (30 seconds)
-                        if (prev >= 30) {
-                            stopRecording();
-                            return 30;
-                        }
-                        return prev + 1;
-                    });
-                }, 1000);
-            } catch (err) {
-                console.error('Recording preparation failed', err);
-                throw err;
-            }
-        } catch (error) {
-            console.error('Failed to start recording:', error);
-            Alert.alert(
-                'Recording Error',
-                'Failed to start recording. Please check your microphone and try again.',
-                [{ text: 'OK' }]
-            );
-            setRecordingStatus('idle');
-        }
-    };
-
-
-    // Stop recording and process the audio
-    const stopRecording = async () => {
-        if (!recording) return;
-
-        try {
-            // First provide feedback to the user
-            if (Platform.OS === 'ios') {
-                // On iOS, haptic feedback
-                try {
-                    const Haptics = await import('expo-haptics');
-                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                } catch (err) {
-                    console.log('Haptics not available:', err);
-                }
-            }
-
-            // Update UI state first to provide immediate feedback
-            setIsRecording(false);
-            setRecordingStatus('stopping');
-            console.log('Stopping recording...');
-
-            // Clear the duration timer
-            if (durationTimerRef.current) {
-                clearInterval(durationTimerRef.current);
-                durationTimerRef.current = null;
-            }
-
-            let recordingUri = null;
-
-            // Try to stop the recording gracefully
-            try {
-                // Stop the recording and get its status
-                const status = await recording.stopAndUnloadAsync();
-                console.log('Recording stopped successfully with status:', status);
-
-                // Get the recording URI
-                recordingUri = recording.getURI();
-
-                if (!recordingUri) {
-                    throw new Error('Recording URI is undefined');
-                }
-
-                console.log('Recording saved to:', recordingUri);
-
-                // Check if recording is too short (less than 0.5 seconds)
-                if (recordingDuration < 1) {
-                    setRecordingStatus('idle');
-                    Alert.alert(
-                        'Recording Too Short',
-                        'Please record for at least 1 second.',
-                        [{ text: 'OK' }]
-                    );
-                    return;
-                }
-
-                // Process the recording for speech-to-text
-                await processRecording(recordingUri);
-
-            } catch (stopError) {
-                console.error('Error stopping recording:', stopError);
-
-                // Try a fallback method to ensure recording stops
-                try {
-                    await Audio.setAudioModeAsync({
-                        allowsRecordingIOS: false,
-                        playsInSilentModeIOS: false,
-                    });
-
-                    setRecordingStatus('idle');
-                    Alert.alert(
-                        'Recording Note',
-                        'Recording may not have saved properly. Please try again.',
-                        [{ text: 'OK' }]
-                    );
-                } catch (fallbackError) {
-                    console.error('Fallback error handling failed:', fallbackError);
-                    throw fallbackError;
-                }
-            }
-        } catch (error) {
-            console.error('Failed to stop recording:', error);
-            Alert.alert(
-                'Recording Error',
-                'Failed to process recording. Please try again.',
-                [{ text: 'OK' }]
-            );
-            setRecordingStatus('idle');
-        } finally {
-            // Ensure we clean up and reset states
-            setRecording(null);
-        }
-    };
-
-
-    // Process the recording with speech recognition service
-    const processRecording = async (uri) => {
-        try {
-            // Update UI state to show processing
-            setRecordingStatus('processing');
-
-            // Get appropriate language code based on current language mode
-            const languageCode =
-                languageMode === 'english' ? 'en-US' :
-                    languageMode === 'sinhala' ? 'si-LK' :
-                        'ta-IN'; // Tamil
-
-            // Instead of using our speech service, let's directly prompt the user to enter text
-            // This is a temporary solution until your backend speech API is integrated
-
-            // Show prompt asking user to type what they said
-            Alert.prompt(
-                'Speech Input',
-                'Please type what you just said:',
-                [
-                    {
-                        text: 'Cancel',
-                        onPress: () => {
-                            console.log('User cancelled speech input');
-                            setRecordingStatus('idle');
-                        },
-                        style: 'cancel'
-                    },
-                    {
-                        text: 'OK',
-                        onPress: (text) => {
-                            if (text && text.trim()) {
-                                // Update input text field with user-provided text
-                                setInputText(text);
-
-                                // Also update the appropriate script based on language
-                                if (languageMode === 'sinhala') {
-                                    const sinhalaText = transliterateToSinhalaScript(text);
-                                    setSinhalaScript(sinhalaText);
-                                } else if (languageMode === 'tamil') {
-                                    const tamilText = transliterateToTamilScript(text);
-                                    setTamilScript(tamilText);
-                                }
-
-                                // Trigger translation automatically after a slight delay
-                                setTimeout(() => {
-                                    handleTranslate();
-                                }, 300);
-                            }
-                            setRecordingStatus('idle');
-                        }
-                    }
-                ],
-                'plain-text'
-            );
-
-            // For Android which doesn't support Alert.prompt, use a different approach
-            // You would implement a custom modal or input dialog
-            if (Platform.OS === 'android') {
-                setRecordingStatus('idle');
-                Alert.alert(
-                    'Manual Input Required',
-                    'Please type what you said in the text box and press Translate.',
-                    [{ text: 'OK' }]
-                );
-            }
-
-        } catch (error) {
-            console.error('Speech processing error:', error);
-            Alert.alert(
-                'Speech Recognition Error',
-                'Could not process your speech. Please type your message instead.',
-                [{ text: 'OK' }]
-            );
-            setRecordingStatus('idle');
-        }
-    };
-
-    // Render the recording button and status
-    const renderRecordingControls = () => {
-        // Don't show if we don't have permission
-        if (!hasRecordingPermission && recordingStatus === 'idle') {
-            return (
-                <TouchableOpacity
-                    style={styles.micPermissionButton}
-                    onPress={async () => {
-                        const { status } = await Audio.requestPermissionsAsync();
-                        setHasRecordingPermission(status === 'granted');
-                    }}
-                >
-                    <MaterialIcons name="mic-off" size={24} color="#D32F2F" />
-                    <Text style={styles.micPermissionText}>Enable Microphone</Text>
-                </TouchableOpacity>
-            );
-        }
-
-        if (recordingStatus === 'preparing') {
-            return (
-                <View style={styles.recordingStatusContainer}>
-                    <ActivityIndicator size="small" color="#FF9800" />
-                    <Text style={styles.recordingStatusText}>Preparing...</Text>
-                </View>
-            );
-        }
-
-        if (recordingStatus === 'processing') {
-            return (
-                <View style={styles.recordingStatusContainer}>
-                    <ActivityIndicator size="small" color="#4C9EFF" />
-                    <Text style={styles.recordingStatusText}>Processing speech...</Text>
-                </View>
-            );
-        }
-
-        if (recordingStatus === 'stopping') {
-            return (
-                <View style={styles.recordingStatusContainer}>
-                    <ActivityIndicator size="small" color="#FF9800" />
-                    <Text style={styles.recordingStatusText}>Finalizing...</Text>
-                </View>
-            );
-        }
-
-        if (isRecording) {
-            const remainingTime = 30 - recordingDuration;
-            const isTimeRunningOut = remainingTime <= 5;
-
-            return (
-                <View style={styles.recordingContainer}>
-                    <View style={styles.recordingIndicator}>
-                        <Animated.View
-                            style={[
-                                styles.recordingDot,
-                                isTimeRunningOut && styles.recordingDotWarning,
-                                { transform: [{ scale: pulseAnim }] }
-                            ]}
-                        />
-                        <Text style={[
-                            styles.recordingTime,
-                            isTimeRunningOut && styles.recordingTimeWarning
-                        ]}>
-                            {Math.floor(recordingDuration / 60).toString().padStart(2, '0')}:
-                            {(recordingDuration % 60).toString().padStart(2, '0')}
-                            {isTimeRunningOut && ` (${remainingTime}s left)`}
-                        </Text>
-                    </View>
-                    <TouchableOpacity
-                        style={styles.stopRecordingButton}
-                        onPress={stopRecording}
-                    >
-                        <FontAwesome name="stop" size={20} color="white" />
-                    </TouchableOpacity>
-                </View>
-            );
-        }
-
-        // Language-specific mic button tooltip
-        const getLanguageTooltip = () => {
-            switch (languageMode) {
-                case 'english':
-                    return "Speak in English";
-                case 'sinhala':
-                    return "Speak in Sinhala";
-                case 'tamil':
-                    return "Speak in Tamil";
-                default:
-                    return "Speak now";
-            }
-        };
-
-        return (
-            <View style={styles.micButtonContainer}>
-                <TouchableOpacity
-                    style={[
-                        styles.micButton,
-                        {
-                            borderColor:
-                                languageMode === 'english' ? '#FF9800' :
-                                    languageMode === 'sinhala' ? '#4C9EFF' :
-                                        '#9C27B0' // Tamil
-                        }
-                    ]}
-                    onPress={startRecording}
-                >
-                    <MaterialIcons
-                        name="mic"
-                        size={24}
-                        color={
-                            languageMode === 'english' ? '#FF9800' :
-                                languageMode === 'sinhala' ? '#4C9EFF' :
-                                    '#9C27B0' // Tamil
-                        }
-                    />
-                </TouchableOpacity>
-                <Text style={styles.micButtonTooltip}>{getLanguageTooltip()}</Text>
-            </View>
-        );
-    };
-
-    // Enhanced getSignVideoByWord to handle array format of Sinhala words
-    const getSignVideoWithArraySupport = (word) => {
-        if (!signsData || !word) return null;
-
-        // First try to find an exact match
-        const exactMatch = signsData.find(sign => sign.word.toLowerCase() === word.toLowerCase());
-        if (exactMatch) return exactMatch;
-
-        // Try to find by Sinhala word/transliteration (handling both string and array formats)
-        const sinhalaMatch = signsData.find(sign => {
-            // Check if sinhalaWord is an array
-            if (Array.isArray(sign.sinhalaWord)) {
-                return sign.sinhalaWord.some(sw => sw.toLowerCase() === word.toLowerCase());
-            }
-            // Otherwise treat as string
-            return sign.sinhalaWord && sign.sinhalaWord.toLowerCase() === word.toLowerCase();
-        });
-        if (sinhalaMatch) return sinhalaMatch;
-
-        // Try to find by transliteration
-        const translitMatch = signsData.find(sign => {
-            // Check if sinhalaTranslit is an array
-            if (Array.isArray(sign.sinhalaTranslit)) {
-                return sign.sinhalaTranslit.some(st => st.toLowerCase() === word.toLowerCase());
-            }
-            // Otherwise treat as string
-            return sign.sinhalaTranslit && sign.sinhalaTranslit.toLowerCase() === word.toLowerCase();
-        });
-        if (translitMatch) return translitMatch;
-
-        // Try to find partial matches (for multi-word searches)
-        if (word.includes(' ')) {
-            const words = word.split(' ');
-            for (const w of words) {
-                const partialMatch = getSignVideoWithArraySupport(w);
-                if (partialMatch) return partialMatch;
-            }
-        }
-
-        return null;
-    };
-
-    // Function to scroll to bottom of the ScrollView
-    const scrollToBottom = () => {
-        if (scrollViewRef.current) {
-            scrollViewRef.current.scrollToEnd({ animated: true });
-        }
-    };
-
-    //refresh
-    const onRefresh = React.useCallback(async () => {
-        setRefreshing(true);
-
-        // Reset functionality here
-        setInputText('');
-        setSinhalaScript('');
-        setTamilScript('');
-        setTranslatedText('');
-        setTranslatedSigns([]);
-        setVideoError(false);
-        setPlaylistReady(false);
-        setCurrentConversation(null);
-        setIsSaved(false);
-        setNotFoundWords([]);
-        setSkippedWords([]);
-        setOriginalInputTokens([]);
-        setLoadingProgress(0);
-        setVideosPreloaded(false);
-
-        // Reload data from Firebase
-        await loadRecentTranslations();
-
-        setRefreshing(false);
-    }, []);
 
     // Set appropriate bottom padding for navigation bar
     useEffect(() => {
@@ -1222,11 +663,11 @@ export default function TextToSign() {
             }
 
             // Try to get the sign for this token using the enhanced function
-            const sign = getSignVideoWithArraySupport(cleanToken);
+            const sign = getSignVideoByWord(cleanToken);
 
             if (isSingleChar) {
                 // This is a single letter - process as a letter
-                const letterSign = getSignVideoWithArraySupport(cleanToken);
+                const letterSign = getSignVideoByWord(cleanToken);
 
                 if (letterSign && letterSign.videoUrl) {
                     signs.push({
@@ -1269,7 +710,7 @@ export default function TextToSign() {
                 const nameLetterVideos = [];
 
                 // Add a special "name start" indicator if available
-                const nameStartSign = getSignVideoWithArraySupport("name_start");
+                const nameStartSign = getSignVideoByWord("name_start");
                 if (nameStartSign && nameStartSign.videoUrl) {
                     signs.push({
                         word: "🔤", // Using emoji to indicate finger spelling will begin
@@ -1289,7 +730,7 @@ export default function TextToSign() {
                     // Skip non-alphabetic characters
                     if (!letter.match(/[A-Za-z]/)) continue;
 
-                    const letterSign = getSignVideoWithArraySupport(letter.toLowerCase());
+                    const letterSign = getSignVideoByWord(letter.toLowerCase());
 
                     if (letterSign && letterSign.videoUrl) {
                         const letterSignObj = {
@@ -1322,7 +763,7 @@ export default function TextToSign() {
                 playlist.push(...nameLetterVideos);
 
                 // Add a special "name end" indicator if available
-                const nameEndSign = getSignVideoWithArraySupport("name_end");
+                const nameEndSign = getSignVideoByWord("name_end");
                 if (nameEndSign && nameEndSign.videoUrl) {
                     signs.push({
                         word: "🔤", // Using emoji to indicate finger spelling is complete
@@ -1411,6 +852,26 @@ export default function TextToSign() {
         setTimeout(() => {
             scrollToBottom();
         }, 500);
+    };
+
+    // Function to handle voice recording transcription
+    const handleVoiceTranscription = (transcribedText) => {
+        // Set the transcribed text to the input field
+        setInputText(transcribedText);
+
+        // Update the appropriate script based on the language mode
+        if (languageMode === 'sinhala') {
+            const sinhalaText = transliterateToSinhalaScript(transcribedText);
+            setSinhalaScript(sinhalaText);
+        } else if (languageMode === 'tamil') {
+            const tamilText = transliterateToTamilScript(transcribedText);
+            setTamilScript(tamilText);
+        }
+
+        // Trigger translation after a short delay
+        setTimeout(() => {
+            handleTranslate();
+        }, 300);
     };
 
     // Enhanced video playback status update
@@ -1504,6 +965,39 @@ export default function TextToSign() {
             }
         }
     };
+
+    // Function to scroll to bottom of the ScrollView
+    const scrollToBottom = () => {
+        if (scrollViewRef.current) {
+            scrollViewRef.current.scrollToEnd({ animated: true });
+        }
+    };
+
+    //refresh
+    const onRefresh = React.useCallback(async () => {
+        setRefreshing(true);
+
+        // Reset functionality here
+        setInputText('');
+        setSinhalaScript('');
+        setTamilScript('');
+        setTranslatedText('');
+        setTranslatedSigns([]);
+        setVideoError(false);
+        setPlaylistReady(false);
+        setCurrentConversation(null);
+        setIsSaved(false);
+        setNotFoundWords([]);
+        setSkippedWords([]);
+        setOriginalInputTokens([]);
+        setLoadingProgress(0);
+        setVideosPreloaded(false);
+
+        // Reload data from Firebase
+        await loadRecentTranslations();
+
+        setRefreshing(false);
+    }, []);
 
     // Focus the input field
     const focusInput = () => {
@@ -1836,7 +1330,7 @@ export default function TextToSign() {
                             >
                                 <TextInput
                                     ref={inputRef}
-                                    style={[styles.textInput, isRecording && styles.textInputRecording]}
+                                    style={[styles.textInput]}
                                     placeholder={
                                         languageMode === 'sinhala'
                                             ? "Type Sinhala words using English letters..."
@@ -1855,12 +1349,14 @@ export default function TextToSign() {
                                     keyboardType="default"
                                     autoCapitalize="none"
                                     disableFullscreenUI={true}
-                                    editable={!isRecording}
                                 />
                             </TouchableOpacity>
 
-                            {/* Voice recording button */}
-                            {renderRecordingControls()}
+                            {/* Voice Recorder Component */}
+                            <VoiceRecorder
+                                onTranscriptionReceived={handleVoiceTranscription}
+                                languageMode={languageMode}
+                            />
                         </View>
 
                         {/* Display Sinhala script as user types */}
@@ -1886,10 +1382,11 @@ export default function TextToSign() {
                             </View>
                         )}
 
-                        <Button text={isTranslating || isTransliterating ? 'Translating...' : 'Translate'}
+                        <Button
+                            text={isTranslating || isTransliterating ? 'Translating...' : 'Translate'}
                             type="fill"
                             onPress={handleTranslate}
-                            disabled={isTranslating || !inputText.trim() || isRecording} />
+                            disabled={isTranslating || !inputText.trim()} />
                     </View>
 
                     {(isTranslating || isTransliterating) ? (
@@ -2352,9 +1849,8 @@ export default function TextToSign() {
             )}
         </SafeAreaView>
     );
-
-
 }
+
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
