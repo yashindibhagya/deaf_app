@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Animated, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Animated, Platform, Alert } from 'react-native';
 import { Audio } from 'expo-av';
 import { FontAwesome, MaterialIcons } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system';
@@ -15,6 +15,9 @@ const useVoiceRecorder = (onTranscriptionReceived, languageMode) => {
     const durationTimerRef = useRef(null);
     const silenceTimerRef = useRef(null);
     const pulseAnim = useRef(new Animated.Value(1)).current;
+
+    // Base URL for the API - change this to your server URL
+    const API_URL = 'http://localhost:5000/api/transcribe';
 
     // Get appropriate language code based on current language mode
     const getLanguageCode = () => {
@@ -195,7 +198,7 @@ const useVoiceRecorder = (onTranscriptionReceived, languageMode) => {
         }, 2000);
     };
 
-    // Simulate speech detection (in a real implementation, this would use audio level detection)
+    // Detect speech (in a real implementation, this would use audio level detection)
     const detectSpeech = () => {
         if (isRecording) {
             setSpeechDetected(true);
@@ -255,7 +258,7 @@ const useVoiceRecorder = (onTranscriptionReceived, languageMode) => {
             await recording.stopAndUnloadAsync();
             const uri = recording.getURI();
 
-            // Process the recording for speech recognition
+            // Process the recording with AssemblyAI through our backend
             processRecording(uri);
 
         } catch (err) {
@@ -266,11 +269,8 @@ const useVoiceRecorder = (onTranscriptionReceived, languageMode) => {
         }
     };
 
-    // Process the recording - here we simulate speech recognition
+    // Process the recording with real API
     const processRecording = async (uri) => {
-        // Here you would normally send the audio to a speech recognition service
-        // For now, we'll simulate recognition with a mock response based on language
-
         setRecordingStatus('processing');
 
         try {
@@ -281,70 +281,77 @@ const useVoiceRecorder = (onTranscriptionReceived, languageMode) => {
                 throw new Error('Recording file not found');
             }
 
-            // Simulate API delay
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            // Create form data to send to the backend
+            const formData = new FormData();
+            formData.append('audio', {
+                uri: uri,
+                type: 'audio/m4a',
+                name: `recording-${Date.now()}.m4a`
+            });
 
-            // Generate a mock transcription based on selected language
-            let transcription = '';
+            // Add language parameter if needed
+            formData.append('language', getLanguageCode());
 
-            switch (languageMode) {
-                case 'english':
-                    transcription = getMockEnglishTranscription();
-                    break;
-                case 'sinhala':
-                    transcription = getMockSinhalaTranscription();
-                    break;
-                case 'tamil':
-                    transcription = getMockTamilTranscription();
-                    break;
-                default:
-                    transcription = getMockEnglishTranscription();
+            // Send the audio file to our backend
+            console.log('Sending audio to backend for transcription...');
+
+            // Use fetch instead of axios for FormData compatibility
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                }
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Server error: ${response.status} - ${errorText}`);
             }
 
-            // Pass the transcription back to the parent component
-            if (onTranscriptionReceived) {
-                onTranscriptionReceived(transcription);
+            const data = await response.json();
+
+            if (data && data.text) {
+                console.log('Transcription received:', data.text);
+
+                // Pass the transcription back to the parent component
+                if (onTranscriptionReceived) {
+                    onTranscriptionReceived(data.text);
+                }
+            } else {
+                throw new Error('No transcription text received');
             }
 
         } catch (err) {
-            console.error('Error processing recording', err);
+            console.error('Error processing recording:', err);
+
+            // Alert the user about the error
+            Alert.alert(
+                'Transcription Error',
+                'Failed to transcribe audio. Please try again.',
+                [{ text: 'OK' }]
+            );
+
+            // Fallback to a mock response in case of error
+            if (onTranscriptionReceived) {
+                const mockResponse = getMockTranscription(languageMode);
+                onTranscriptionReceived(mockResponse);
+            }
         } finally {
             setRecordingStatus('idle');
         }
     };
 
-    // Generate mock transcriptions for demo purposes
-    const getMockEnglishTranscription = () => {
-        const phrases = [
-            "Hello, how are you?",
-            "Nice to meet you",
-            "Thank you for your help",
-            "What is your name?",
-            "I am learning sign language"
-        ];
-        return phrases[Math.floor(Math.random() * phrases.length)];
-    };
-
-    const getMockSinhalaTranscription = () => {
-        const phrases = [
-            "ayubowan",
-            "kohomada",
-            "sthutiyi",
-            "oyage nama mokakda",
-            "mama sinhala igena gannawa"
-        ];
-        return phrases[Math.floor(Math.random() * phrases.length)];
-    };
-
-    const getMockTamilTranscription = () => {
-        const phrases = [
-            "vanakkam",
-            "neenga eppadi irukeenga",
-            "nandri",
-            "ungal peyar enna",
-            "naan tamil karkireen"
-        ];
-        return phrases[Math.floor(Math.random() * phrases.length)];
+    // Generate mock transcriptions as a fallback
+    const getMockTranscription = (language) => {
+        switch (language) {
+            case 'sinhala':
+                return "ayubowan";
+            case 'tamil':
+                return "vanakkam";
+            default:
+                return "Hello, how are you?";
+        }
     };
 
     return {
@@ -415,7 +422,7 @@ const VoiceRecorder = ({ onTranscriptionReceived, languageMode }) => {
         return (
             <View style={styles.recordingStatusContainer}>
                 <ActivityIndicator size="small" color="#4C9EFF" />
-                <Text style={styles.recordingStatusText}>Processing speech...</Text>
+                <Text style={styles.recordingStatusText}>Transcribing speech...</Text>
             </View>
         );
     }
