@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "expo-camera": "^16.1.6",
+    "expo-image-manipulator": "^13.1.7"
+  }
+}
