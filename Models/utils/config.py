@@ -1,3 +1,4 @@
+# utils/config.py
 """
 GestureConnect Configuration
 
@@ -9,27 +10,39 @@ import os
 
 # Path Configuration
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA_PATH = os.path.join(BASE_DIR, 'data', 'processed')  # Where raw data is stored
+DATA_PATH = os.path.join(BASE_DIR, 'data')  # Where raw data is stored
 PROCESSED_DATA_PATH = os.path.join(DATA_PATH, 'processed')  # Where processed data is stored
 MODELS_PATH = os.path.join(BASE_DIR, 'models')  # Where models are stored
 LOGS_PATH = os.path.join(BASE_DIR, 'logs')  # Where logs are stored
 
-# Actions/Labels - Updated to match your 5-class model
-ACTIONS = ["A","B","C","D","E","F", "G", "H"]  # Sign language alphabets that were used in training
-#ACTIONS = ["F", "G", "H"]  # Sign language alphabets that were used in training
+# Actions/Labels
+#ACTIONS = ["ayanna","aayanna","aeyanna"]  # Sign language alphabets
+ACTIONS = ["A","B","C","D","E","F", "G", "H","I","J","K","L","M","N","O","P","Q","R","S","T","what","your","name","how","you","thankyou","old","ayanna","aayanna","aeyanna"]  # Sign language alphabets
+#"U","V","W","X","Y","Z"
 
 # Data Collection Parameters
-NUM_SEQUENCES = 30  # Number of videos collected per action
+NUM_SEQUENCES = 100  # Number of videos collected per action
 SEQUENCE_LENGTH = 30  # Number of frames per video
 
+# Data Augmentation Parameters
+USE_AUGMENTATION = True  # Enable data augmentation
+AUGMENTATION_FACTOR = 2  # Multiply dataset size by this factor through augmentation
+RANDOM_ROTATION_MAX = 10  # Max rotation angle in degrees
+RANDOM_SHIFT_MAX = 0.1  # Max shift as fraction of frame size
+RANDOM_SCALE_RANGE = (0.9, 1.1)  # Range of random scaling
+
 # Model Parameters
-EPOCHS = 100  # Default number of training epochs
+EPOCHS = 200  # Increased epochs for better learning
 BATCH_SIZE = 16  # Smaller batch size for better learning
-LEARNING_RATE = 0.001  # Learning rate for optimizer
-PREDICTION_THRESHOLD = 0.5  # Confidence threshold for predictions
+LEARNING_RATE = 0.0005  # Reduced learning rate for more stable training
+PREDICTION_THRESHOLD = 0.7  # Increased threshold for more confident predictions
 
 # Regularization Parameters
-DROPOUT_RATE = 0.5  # Increased dropout rate to reduce overfitting
+DROPOUT_RATE = 0.5  # Dropout rate to reduce overfitting
+L2_REGULARIZATION = 0.001  # L2 regularization strength
+
+# Train/Test Split
+TEST_SIZE = 0.20  # 20% for test data
 
 # MediaPipe Parameters
 MP_DETECTION_CONFIDENCE = 0.5  # Minimum detection confidence for MediaPipe
@@ -41,8 +54,7 @@ API_PORT = 8000  # Default port for the API server
 
 # Keypoint dimensions
 # The expected shape of keypoints after extraction
-# This includes pose (33*4), face (468*3), left hand (21*3), right hand (21*3)
-KEYPOINT_DIMENSIONS = 1662  # Based on your model's input dimensions
+KEYPOINT_DIMENSIONS = 1662  # Full dimensionality of extracted keypoints
 
 # Create necessary directories
 os.makedirs(DATA_PATH, exist_ok=True)
