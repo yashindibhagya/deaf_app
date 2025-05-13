@@ -9,11 +9,24 @@ import sys
 import argparse
 import time
 
-# Add the current directory to the path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from utils.config import DATA_PATH, MODELS_PATH, LOGS_PATH, API_HOST, API_PORT
+def ensure_directory_structure():
+    """Create necessary directories if they don't exist"""
+    dirs = [
+        "data",
+        "data/processed",
+        "models",
+        "logs"
+    ]
+    
+    for directory in dirs:
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+            print(f"Created directory: {directory}")
 
 def main():
+    # Ensure directory structure
+    ensure_directory_structure()
+    
     # Parse command-line arguments
     parser = argparse.ArgumentParser(
         description="GestureConnect - Sign Language Recognition System",
@@ -42,8 +55,8 @@ def main():
     
     # API server command
     api_parser = subparsers.add_parser("api", help="Start API server for mobile app")
-    api_parser.add_argument("--host", type=str, default=API_HOST, help="Host to run the server on")
-    api_parser.add_argument("--port", type=int, default=API_PORT, help="Port to run the server on")
+    api_parser.add_argument("--host", type=str, default="0.0.0.0", help="Host to run the server on")
+    api_parser.add_argument("--port", type=int, default=8000, help="Port to run the server on")
     
     # Parse arguments
     args = parser.parse_args()
