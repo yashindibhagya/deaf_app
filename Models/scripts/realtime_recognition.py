@@ -9,12 +9,12 @@ import time
 # Add the parent directory to the path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.mediapipe_utils import mediapipe_detection, draw_styled_landmarks, extract_keypoints
+from utils.config import ACTIONS, SEQUENCE_LENGTH
 
 # Define paths and constants
 MODELS_PATH = os.path.join('models')  # Path to saved models
-ACTIONS = ["A", "B", "C", "D", "E", "F", "G"]  # Sign language alphabets
-SEQUENCE_LENGTH = 30  # Number of frames to collect per prediction
 THRESHOLD = 0.7  # Confidence threshold for predictions
+MAX_DISPLAY_ACTIONS = 5  # Maximum number of actions to display
 
 def load_sign_model(model_path=None):
     """
@@ -27,7 +27,7 @@ def load_sign_model(model_path=None):
         model: Loaded Keras model
     """
     if model_path is None:
-        model_path = os.path.join(MODELS_PATH, 'sign_language_model.h5')
+        model_path = os.path.join(MODELS_PATH, 'sign_language_model.keras')
     
     if not os.path.exists(model_path):
         print(f"Error: Model file not found at {model_path}")
@@ -52,12 +52,18 @@ def viz_probabilities(image, res, actions):
     """
     output_image = image.copy()
     
+    # Get top predictions
+    top_indices = np.argsort(res)[-MAX_DISPLAY_ACTIONS:][::-1]
+    
     # Draw prediction bar chart
-    for i, prob in enumerate(res):
+    for i, idx in enumerate(top_indices):
+        prob = res[idx]
+        action = actions[idx]
+        
         # Calculate bar width based on probability
         bar_width = int(prob * 200)  # Scale to a reasonable width
         
-        # Set color based on confidence (green if high, yellow if medium, red if low)
+        # Set color based on confidence
         if prob >= THRESHOLD:
             color = (0, 255, 0)  # Green for high confidence
         elif prob >= 0.4:
@@ -69,7 +75,7 @@ def viz_probabilities(image, res, actions):
         cv2.rectangle(output_image, (500, 30 + i * 30), (500 + bar_width, 50 + i * 30), color, -1)
         
         # Draw action label
-        cv2.putText(output_image, f"{actions[i]}: {prob:.2f}", (510, 45 + i * 30), 
+        cv2.putText(output_image, f"{action}: {prob:.2f}", (510, 45 + i * 30), 
                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
     
     # Draw prediction box
@@ -105,9 +111,8 @@ def realtime_recognition():
     sequence = []
     predictions = []
     sentence = []
-    
-    # Colors for visualization
-    colors = [(245, 117, 16), (117, 245, 16), (16, 117, 245)]
+    last_prediction_time = time.time()
+    prediction_interval = 0.1  # Minimum time between predictions (seconds)
     
     print("Starting real-time sign language recognition...")
     print("Press 'q' to quit")
@@ -138,10 +143,11 @@ def realtime_recognition():
             # Ensure sequence is of correct length
             sequence = sequence[-SEQUENCE_LENGTH:]
             
-            # Make predictions when we have enough frames
-            if len(sequence) == SEQUENCE_LENGTH:
+            # Make predictions when we have enough frames and enough time has passed
+            current_time = time.time()
+            if len(sequence) == SEQUENCE_LENGTH and (current_time - last_prediction_time) >= prediction_interval:
                 # Prepare input for model
-                res = model.predict(np.expand_dims(sequence, axis=0))[0]
+                res = model.predict(np.expand_dims(sequence, axis=0), verbose=0)[0]
                 predictions.append(res)
                 
                 # Visualize probabilities
@@ -158,6 +164,8 @@ def realtime_recognition():
                     # Limit sentence length
                     if len(sentence) > 5:
                         sentence = sentence[-5:]
+                
+                last_prediction_time = current_time
             
             # Show current sentence
             cv2.rectangle(image, (0, 60), (640, 100), (0, 0, 0), -1)

@@ -1,8 +1,12 @@
+"""
+Sign Language Recognition Training Script
+This module handles model training functionality for the GestureConnect system.
+"""
 import os
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense, Dropout
+from tensorflow.keras.layers import LSTM, Dense, Dropout, BatchNormalization, Bidirectional, Conv1D, MaxPooling1D
 from tensorflow.keras.callbacks import TensorBoard, ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.regularizers import l2
@@ -18,13 +22,65 @@ from utils.config import (
     ACTIONS, SEQUENCE_LENGTH, EPOCHS, BATCH_SIZE
 )
 
-# Default values if not in config
-LEARNING_RATE = 0.001  # Default learning rate
-DROPOUT_RATE = 0.5     # Default dropout rate
+# Updated hyperparameters
+LEARNING_RATE = 0.0005  # Reduced learning rate for better convergence
+DROPOUT_RATE = 0.4     # Reduced dropout for better feature learning
+L2_REGULARIZATION = 0.0005  # Reduced L2 regularization
+
+def build_enhanced_model(input_shape, num_classes):
+    """
+    Build an enhanced model architecture with CNN-LSTM hybrid approach
+    
+    Args:
+        input_shape: Shape of input data
+        num_classes: Number of output classes
+        
+    Returns:
+        Compiled Keras model
+    """
+    model = Sequential()
+    
+    # CNN layers for spatial feature extraction
+    model.add(Conv1D(64, kernel_size=3, activation='relu', input_shape=input_shape,
+                    kernel_regularizer=l2(L2_REGULARIZATION)))
+    model.add(BatchNormalization())
+    model.add(MaxPooling1D(pool_size=2))
+    
+    model.add(Conv1D(128, kernel_size=3, activation='relu',
+                    kernel_regularizer=l2(L2_REGULARIZATION)))
+    model.add(BatchNormalization())
+    model.add(MaxPooling1D(pool_size=2))
+    
+    # Bidirectional LSTM layers for temporal feature extraction
+    model.add(Bidirectional(LSTM(128, return_sequences=True,
+                               kernel_regularizer=l2(L2_REGULARIZATION))))
+    model.add(BatchNormalization())
+    model.add(Dropout(DROPOUT_RATE))
+    
+    model.add(Bidirectional(LSTM(64, return_sequences=False,
+                               kernel_regularizer=l2(L2_REGULARIZATION))))
+    model.add(BatchNormalization())
+    model.add(Dropout(DROPOUT_RATE))
+    
+    # Dense layers for classification
+    model.add(Dense(128, activation='relu',
+                   kernel_regularizer=l2(L2_REGULARIZATION)))
+    model.add(BatchNormalization())
+    model.add(Dropout(DROPOUT_RATE))
+    
+    model.add(Dense(64, activation='relu',
+                   kernel_regularizer=l2(L2_REGULARIZATION)))
+    model.add(BatchNormalization())
+    model.add(Dropout(DROPOUT_RATE))
+    
+    # Output layer
+    model.add(Dense(num_classes, activation='softmax'))
+    
+    return model
 
 def train_model(epochs=EPOCHS, batch_size=BATCH_SIZE, learning_rate=LEARNING_RATE):
     """
-    Train LSTM model on prepared sign language data with improved parameters
+    Train enhanced model on prepared sign language data
     
     Args:
         epochs: Number of training epochs
@@ -73,12 +129,12 @@ def train_model(epochs=EPOCHS, batch_size=BATCH_SIZE, learning_rate=LEARNING_RAT
         class_weight_dict = dict(zip(np.unique(y_integers), class_weights))
         print("Using class weights:", class_weight_dict)
     except ValueError:
-        # Fallback if there's an issue with computing class weights
         print("Warning: Couldn't compute class weights, using uniform weights")
         class_weight_dict = None
     
     # Set up callbacks for training
     log_dir = os.path.join(LOGS_PATH, datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
+    os.makedirs(log_dir, exist_ok=True)
     tensorboard_callback = TensorBoard(log_dir=log_dir, histogram_freq=1)
     
     checkpoint_path = os.path.join(MODELS_PATH, 'checkpoints', 'model_checkpoint.keras')
@@ -91,55 +147,28 @@ def train_model(epochs=EPOCHS, batch_size=BATCH_SIZE, learning_rate=LEARNING_RAT
         verbose=1
     )
     
-    # Add learning rate reduction callback
+    # Enhanced learning rate reduction callback
     reduce_lr = ReduceLROnPlateau(
         monitor='val_loss',
-        factor=0.2,
-        patience=5,
-        min_lr=1e-6,
+        factor=0.1,
+        patience=8,
+        min_lr=1e-7,
         verbose=1
     )
     
+    # Enhanced early stopping
     early_stopping = EarlyStopping(
         monitor='val_loss',
-        patience=15,
+        patience=20,
         restore_best_weights=True,
         verbose=1
     )
     
-    # Build LSTM model with improved architecture and regularization
-    model = Sequential()
-    
-    # Input layer
-    model.add(LSTM(64, 
-                  return_sequences=True, 
-                  activation='relu', 
-                  input_shape=(SEQUENCE_LENGTH, X_train.shape[2]),
-                  kernel_regularizer=l2(0.001)))  # Added L2 regularization
-    model.add(Dropout(DROPOUT_RATE))
-    
-    # Middle LSTM layer
-    model.add(LSTM(128, 
-                  return_sequences=True, 
-                  activation='relu',
-                  kernel_regularizer=l2(0.001)))
-    model.add(Dropout(DROPOUT_RATE))
-    
-    # Final LSTM layer
-    model.add(LSTM(64, 
-                  return_sequences=False, 
-                  activation='relu',
-                  kernel_regularizer=l2(0.001)))
-    model.add(Dropout(DROPOUT_RATE))
-    
-    # Dense layers for classification
-    model.add(Dense(64, 
-                   activation='relu', 
-                   kernel_regularizer=l2(0.001)))
-    model.add(Dropout(DROPOUT_RATE))
-    
-    # Output layer with softmax activation
-    model.add(Dense(len(ACTIONS), activation='softmax'))
+    # Build and compile enhanced model
+    model = build_enhanced_model(
+        input_shape=(SEQUENCE_LENGTH, X_train.shape[2]),
+        num_classes=len(ACTIONS)
+    )
     
     # Compile model with custom learning rate
     optimizer = Adam(learning_rate=learning_rate)
@@ -152,7 +181,7 @@ def train_model(epochs=EPOCHS, batch_size=BATCH_SIZE, learning_rate=LEARNING_RAT
     # Print model summary
     model.summary()
     
-    # Train model
+    # Train model with enhanced parameters
     history = model.fit(
         X_train, y_train,
         epochs=epochs,
@@ -167,12 +196,12 @@ def train_model(epochs=EPOCHS, batch_size=BATCH_SIZE, learning_rate=LEARNING_RAT
     model.save(model_path)
     print(f"Model saved to: {model_path}")
     
-    # For TensorFlow Lite deployment with LSTM support
+    # For TensorFlow Lite deployment
     try:
         print("Converting model to TFLite format...")
         tflite_path = os.path.join(MODELS_PATH, 'sign_language_model.tflite')
         converter = tf.lite.TFLiteConverter.from_keras_model(model)
-
+        
         # Add necessary configuration for LSTM model conversion
         converter.target_spec.supported_ops = [
             tf.lite.OpsSet.TFLITE_BUILTINS,
@@ -212,7 +241,7 @@ def train_model(epochs=EPOCHS, batch_size=BATCH_SIZE, learning_rate=LEARNING_RAT
     plt.title('Model Loss')
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
-    plt.yscale('log')  # Log scale for better visualization of large loss values
+    plt.yscale('log')
     plt.legend()
     plt.grid(True, linestyle='--', alpha=0.6)
     
@@ -239,5 +268,12 @@ def train_model(epochs=EPOCHS, batch_size=BATCH_SIZE, learning_rate=LEARNING_RAT
     return model
 
 if __name__ == "__main__":
-    train_model()
-    print("Model training complete!")
+    # Add command line argument support
+    import argparse
+    parser = argparse.ArgumentParser(description='Train sign language recognition model')
+    parser.add_argument('--epochs', type=int, default=EPOCHS, help='Number of training epochs')
+    parser.add_argument('--batch-size', type=int, default=BATCH_SIZE, help='Batch size for training')
+    parser.add_argument('--learning-rate', type=float, default=LEARNING_RATE, help='Learning rate')
+    args = parser.parse_args()
+    
+    train_model(epochs=args.epochs, batch_size=args.batch_size, learning_rate=args.learning_rate)

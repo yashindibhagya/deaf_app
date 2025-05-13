@@ -1,3 +1,4 @@
+# scripts/evaluate_model.py
 import os
 import numpy as np
 import tensorflow as tf
@@ -37,7 +38,7 @@ def evaluate_model(model_path=None):
         X_test = np.load(os.path.join(PROCESSED_DATA_PATH, 'X_test.npy'))
         y_test = np.load(os.path.join(PROCESSED_DATA_PATH, 'y_test.npy'))
     except FileNotFoundError:
-        print("Error: Test data files not found. Run prepare_data.py first.")
+        print("Error: Test data files not found. Run clean_and_augment_data.py first.")
         sys.exit(1)
     
     # Make predictions
@@ -65,10 +66,10 @@ def evaluate_model(model_path=None):
     plt.tight_layout()
     
     # Save plot
-    confusion_matrix_path = os.path.join(MODELS_PATH, 'confusion_matrix.png')
+    confusion_matrix_path = os.path.join(MODELS_PATH, 'improved_confusion_matrix.png')
     plt.savefig(confusion_matrix_path)
     print(f"Confusion matrix saved to {confusion_matrix_path}")
-    plt.show()
+    plt.close()
     
     # Calculate per-class metrics
     class_accuracies = {}
@@ -91,10 +92,10 @@ def evaluate_model(model_path=None):
         plt.text(action, acc + 0.02, f'{acc:.2f}', ha='center')
     
     # Save plot
-    class_accuracy_path = os.path.join(MODELS_PATH, 'class_accuracies.png')
+    class_accuracy_path = os.path.join(MODELS_PATH, 'improved_class_accuracies.png')
     plt.savefig(class_accuracy_path)
     print(f"Class accuracies plot saved to {class_accuracy_path}")
-    plt.show()
+    plt.close()
     
     # Return metrics
     return {
@@ -105,5 +106,11 @@ def evaluate_model(model_path=None):
     }
 
 if __name__ == "__main__":
-    evaluate_model()
+    # Parse command line arguments
+    import argparse
+    parser = argparse.ArgumentParser(description='Evaluate sign language model')
+    parser.add_argument('--model', type=str, help='Path to model file')
+    args = parser.parse_args()
+    
+    evaluate_model(model_path=args.model)
     print("Model evaluation complete!")
