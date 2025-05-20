@@ -11,13 +11,14 @@ const useVoiceRecorder = (onTranscriptionReceived, languageMode) => {
     const [recordingStatus, setRecordingStatus] = useState('idle');
     const [recordingDuration, setRecordingDuration] = useState(0);
     const [hasPermission, setHasPermission] = useState(false);
-    const [speechDetected, setSpeechDetected] = useState(false);
+    const [audioLevel, setAudioLevel] = useState(0);
     const durationTimerRef = useRef(null);
+    const audioMonitorRef = useRef(null);
     const silenceTimerRef = useRef(null);
     const pulseAnim = useRef(new Animated.Value(1)).current;
 
-    // Base URL for the API - change this to your server URL
-    const API_URL = 'http://localhost:5000/api/transcribe';
+    // Base URL for your API (replace with your actual computer's IP address)
+    const API_URL = 'http://192.168.1.100:5000/api/transcribe';
 
     // Get appropriate language code based on current language mode
     const getLanguageCode = () => {
@@ -41,12 +42,13 @@ const useVoiceRecorder = (onTranscriptionReceived, languageMode) => {
                         allowsRecordingIOS: true,
                         playsInSilentModeIOS: true,
                         staysActiveInBackground: false,
-                        interruptionModeIOS: Audio.INTERRUPTION_MODE_IOS_DO_NOT_MIX,
-                        interruptionModeAndroid: Audio.INTERRUPTION_MODE_ANDROID_DO_NOT_MIX,
+                        interruptionModeIOS: 1, // DO_NOT_MIX
+                        interruptionModeAndroid: 1, // DO_NOT_MIX
                     });
                 }
             } catch (err) {
                 console.error('Failed to get recording permissions', err);
+                Alert.alert('Microphone Error', `Couldn't access the microphone: ${err.message}`);
             }
         };
 
@@ -63,7 +65,11 @@ const useVoiceRecorder = (onTranscriptionReceived, languageMode) => {
             if (silenceTimerRef.current) {
                 clearTimeout(silenceTimerRef.current);
             }
+            if (audioMonitorRef.current) {
+                clearInterval(audioMonitorRef.current);
+            }
         };
+        // eslint-disable-next-line
     }, []);
 
     // Animate the recording indicator
@@ -113,7 +119,7 @@ const useVoiceRecorder = (onTranscriptionReceived, languageMode) => {
             try {
                 if (Platform.OS === 'ios') {
                     const Haptics = require('expo-haptics');
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                 }
             } catch (err) {
                 console.log('Haptics not available');
@@ -148,11 +154,13 @@ const useVoiceRecorder = (onTranscriptionReceived, languageMode) => {
             await newRecording.prepareToRecordAsync(recordingOptions);
             await newRecording.startAsync();
 
-            // Update state
             setRecording(newRecording);
             setIsRecording(true);
             setRecordingStatus('recording');
-            setSpeechDetected(false);
+            setAudioLevel(0);
+
+            // Start monitoring for audio levels
+            startAudioLevelMonitoring(newRecording);
 
             // Start recording duration timer
             setRecordingDuration(0);
@@ -162,7 +170,6 @@ const useVoiceRecorder = (onTranscriptionReceived, languageMode) => {
 
             durationTimerRef.current = setInterval(() => {
                 setRecordingDuration(prev => {
-                    // Auto-stop recording after 30 seconds
                     if (prev >= 30) {
                         stopRecording();
                         return 30;
@@ -171,94 +178,93 @@ const useVoiceRecorder = (onTranscriptionReceived, languageMode) => {
                 });
             }, 1000);
 
-            // Setup auto-stop after 2 seconds of silence (simulated)
-            resetSilenceDetection();
+            // Setup auto-stop after 2 seconds of silence
+            startSilenceDetection();
 
         } catch (err) {
             console.error('Failed to start recording', err);
             setRecordingStatus('idle');
+            Alert.alert('Recording Error', `Couldn't start recording: ${err.message}`);
         }
+    };
+
+    // Start monitoring audio levels
+    const startAudioLevelMonitoring = (recordingInstance) => {
+        if (audioMonitorRef.current) {
+            clearInterval(audioMonitorRef.current);
+        }
+
+        audioMonitorRef.current = setInterval(async () => {
+            if (recordingInstance && recordingInstance._canRecord) {
+                try {
+                    const status = await recordingInstance.getStatusAsync();
+                    if (status && status.metering !== undefined) {
+                        const level = Math.max(0, (status.metering + 100) / 100);
+                        setAudioLevel(level);
+                        if (level > 0.1) {
+                            resetSilenceDetection();
+                        }
+                    } else {
+                        const simulatedLevel = Math.random() * 0.7 + 0.1;
+                        setAudioLevel(simulatedLevel);
+                    }
+                } catch (err) {
+                    console.log('Error monitoring audio levels:', err);
+                }
+            }
+        }, 200);
+    };
+
+    // Start silence detection
+    const startSilenceDetection = () => {
+        resetSilenceDetection();
     };
 
     // Reset silence detection timer
     const resetSilenceDetection = () => {
-        // Clear any existing silence timer
         if (silenceTimerRef.current) {
             clearTimeout(silenceTimerRef.current);
         }
-
-        // Set a new silence timer - if no speech is detected for 2 seconds, stop recording
         silenceTimerRef.current = setTimeout(() => {
-            if (isRecording && !speechDetected) {
-                // If we've been recording for at least 1 second, stop and process
-                if (recordingDuration >= 1) {
-                    stopRecording();
-                }
+            if (isRecording && recordingDuration >= 2) {
+                stopRecording();
             }
         }, 2000);
     };
-
-    // Detect speech (in a real implementation, this would use audio level detection)
-    const detectSpeech = () => {
-        if (isRecording) {
-            setSpeechDetected(true);
-            resetSilenceDetection();
-        }
-    };
-
-    // Call this function periodically to simulate speech detection
-    useEffect(() => {
-        let speechDetectionInterval;
-
-        if (isRecording) {
-            // Simulate periodic speech detection by randomly triggering detection
-            speechDetectionInterval = setInterval(() => {
-                if (Math.random() > 0.3) {  // 70% chance of detecting speech each check
-                    detectSpeech();
-                }
-            }, 500);
-        }
-
-        return () => {
-            if (speechDetectionInterval) {
-                clearInterval(speechDetectionInterval);
-            }
-        };
-    }, [isRecording]);
 
     // Stop recording
     const stopRecording = async () => {
         if (!recording) return;
 
         try {
-            // Provide haptic feedback
             try {
                 if (Platform.OS === 'ios') {
                     const Haptics = require('expo-haptics');
-                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                 }
             } catch (err) {
                 console.log('Haptics not available');
             }
 
-            // Update UI immediately
             setIsRecording(false);
             setRecordingStatus('processing');
 
-            // Clear timers
             if (durationTimerRef.current) {
                 clearInterval(durationTimerRef.current);
+                durationTimerRef.current = null;
             }
-
             if (silenceTimerRef.current) {
                 clearTimeout(silenceTimerRef.current);
+                silenceTimerRef.current = null;
+            }
+            if (audioMonitorRef.current) {
+                clearInterval(audioMonitorRef.current);
+                audioMonitorRef.current = null;
             }
 
-            // Stop the recording
             await recording.stopAndUnloadAsync();
             const uri = recording.getURI();
 
-            // Process the recording with AssemblyAI through our backend
             processRecording(uri);
 
         } catch (err) {
@@ -269,88 +275,65 @@ const useVoiceRecorder = (onTranscriptionReceived, languageMode) => {
         }
     };
 
-    // Process the recording with real API
+    // Process the recording with the backend API and AssemblyAI
     const processRecording = async (uri) => {
         setRecordingStatus('processing');
 
         try {
-            // First check if the recording exists
+            // Check if the recording exists
             const fileInfo = await FileSystem.getInfoAsync(uri);
+            if (!fileInfo.exists) throw new Error('Recording file not found');
 
-            if (!fileInfo.exists) {
-                throw new Error('Recording file not found');
-            }
-
-            // Create form data to send to the backend
+            // Prepare form data
             const formData = new FormData();
             formData.append('audio', {
-                uri: uri,
+                uri,
                 type: 'audio/m4a',
                 name: `recording-${Date.now()}.m4a`
             });
-
-            // Add language parameter if needed
             formData.append('language', getLanguageCode());
 
-            // Send the audio file to our backend
-            console.log('Sending audio to backend for transcription...');
+            console.log(`Attempting to send audio to ${API_URL}...`);
 
-            // Use fetch instead of axios for FormData compatibility
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                }
-            });
+            // Use a longer timeout (AssemblyAI can be slow)
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 seconds
+
+            let response;
+            try {
+                response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: formData,
+                    signal: controller.signal
+                });
+            } finally {
+                clearTimeout(timeoutId);
+            }
 
             if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`Server error: ${response.status} - ${errorText}`);
+                throw new Error(`Server responded with ${response.status}`);
             }
 
             const data = await response.json();
 
             if (data && data.text) {
                 console.log('Transcription received:', data.text);
-
-                // Pass the transcription back to the parent component
-                if (onTranscriptionReceived) {
-                    onTranscriptionReceived(data.text);
-                }
+                if (onTranscriptionReceived) onTranscriptionReceived(data.text);
             } else {
-                throw new Error('No transcription text received');
+                throw new Error('No transcription text received from server');
             }
-
         } catch (err) {
             console.error('Error processing recording:', err);
 
-            // Alert the user about the error
-            Alert.alert(
-                'Transcription Error',
-                'Failed to transcribe audio. Please try again.',
-                [{ text: 'OK' }]
-            );
+            let message = 'Unable to reach transcription service. Please check:';
+            message += '\n- Is your backend running?';
+            message += '\n- Is your phone and computer on the same WiFi?';
+            message += '\n- Can you access /health from your phone browser?';
+            message += `\n\nError: ${err.message}`;
 
-            // Fallback to a mock response in case of error
-            if (onTranscriptionReceived) {
-                const mockResponse = getMockTranscription(languageMode);
-                onTranscriptionReceived(mockResponse);
-            }
+            Alert.alert('Transcription Error', message, [{ text: 'OK' }]);
         } finally {
             setRecordingStatus('idle');
-        }
-    };
-
-    // Generate mock transcriptions as a fallback
-    const getMockTranscription = (language) => {
-        switch (language) {
-            case 'sinhala':
-                return "ayubowan";
-            case 'tamil':
-                return "vanakkam";
-            default:
-                return "Hello, how are you?";
         }
     };
 
@@ -359,6 +342,7 @@ const useVoiceRecorder = (onTranscriptionReceived, languageMode) => {
         recordingStatus,
         recordingDuration,
         hasPermission,
+        audioLevel,
         pulseAnim,
         startRecording,
         stopRecording,
@@ -372,6 +356,7 @@ const VoiceRecorder = ({ onTranscriptionReceived, languageMode }) => {
         recordingStatus,
         recordingDuration,
         hasPermission,
+        audioLevel,
         pulseAnim,
         startRecording,
         stopRecording,
@@ -395,6 +380,11 @@ const VoiceRecorder = ({ onTranscriptionReceived, languageMode }) => {
             default:
                 return "Speak now";
         }
+    };
+
+    // Calculate dot size based on audio level
+    const getDotSize = () => {
+        return 10 + (audioLevel * 15);
     };
 
     if (!hasPermission && recordingStatus === 'idle') {
@@ -438,7 +428,11 @@ const VoiceRecorder = ({ onTranscriptionReceived, languageMode }) => {
                         style={[
                             styles.recordingDot,
                             isTimeRunningOut && styles.recordingDotWarning,
-                            { transform: [{ scale: pulseAnim }] }
+                            {
+                                transform: [{ scale: pulseAnim }],
+                                width: getDotSize(),
+                                height: getDotSize(),
+                            }
                         ]}
                     />
                     <Text style={[
@@ -469,7 +463,7 @@ const VoiceRecorder = ({ onTranscriptionReceived, languageMode }) => {
                         borderColor:
                             languageMode === 'english' ? '#FF9800' :
                                 languageMode === 'sinhala' ? '#4C9EFF' :
-                                    '#9C27B0' // Tamil
+                                    '#9C27B0'
                     }
                 ]}
                 onPress={startRecording}
@@ -480,7 +474,7 @@ const VoiceRecorder = ({ onTranscriptionReceived, languageMode }) => {
                     color={
                         languageMode === 'english' ? '#FF9800' :
                             languageMode === 'sinhala' ? '#4C9EFF' :
-                                '#9C27B0' // Tamil
+                                '#9C27B0'
                     }
                 />
             </TouchableOpacity>
@@ -490,7 +484,6 @@ const VoiceRecorder = ({ onTranscriptionReceived, languageMode }) => {
 };
 
 const styles = StyleSheet.create({
-    // Voice recording button styles
     micButtonContainer: {
         alignItems: 'center',
     },
