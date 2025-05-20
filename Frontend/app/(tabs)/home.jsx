@@ -13,7 +13,7 @@ import {
     ImageBackground,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { UserDetailContext } from "../../context/UserDetailContext"; // Import the context directly
+import { UserDetailContext } from "../../context/UserDetailContext";
 import { useVideo } from "../../context/VideoContext";
 import { doc, collection, getDocs, query, orderBy, limit } from "firebase/firestore";
 import { auth, db } from "../../config/firebaseConfig";
@@ -21,6 +21,8 @@ import Common from "../../Components/Container/Common";
 import InProgressCourses from "../../Components/Home/InProgressCourses";
 import NewCourses from "../../Components/Home/NewCourses";
 import Header from "../../Components/Home/Header";
+import WelcomeCard from "../../Components/Home/WelcomeCard"; // Import WelcomeCard
+import { MaterialIcons } from "@expo/vector-icons";
 
 export default function Home() {
     const router = useRouter();
@@ -135,9 +137,22 @@ export default function Home() {
 
                 <Header />
 
-                {/* Progress Section */}
+                {/* Saved Translations Button */}
+                <TouchableOpacity
+                    style={styles.savedButton}
+                    onPress={() => router.push("/saveSign/savedTranslations")}
+                >
+                    <MaterialIcons name="history" size={20} color="#155658" />
+                    <Text style={styles.savedButtonText}>View Saved Translations</Text>
+                </TouchableOpacity>
+
+                {/* Progress Section - Show WelcomeCard for new users */}
                 <View style={styles.sectionContainer}>
-                    <InProgressCourses courses={inProgressCourses} />
+                    {inProgressCourses.length > 0 ? (
+                        <InProgressCourses courses={inProgressCourses} />
+                    ) : (
+                        <WelcomeCard />
+                    )}
                     <NewCourses courses={notStartedCourses} />
                 </View>
 
@@ -176,40 +191,17 @@ export default function Home() {
                     </TouchableOpacity>
                 </View>
 
-                {/* Saved Conversations */}
+                {/* Recent Conversations Section */}
                 {recentConversations.length > 0 && (
-                    <View style={styles.sectionContainer}>
-                        <Text style={styles.sectionTitle}>Saved Conversations</Text>
-                        <View style={styles.conversationsContainer}>
-                            {recentConversations.map((conversation, index) => (
-                                <TouchableOpacity
-                                    key={index}
-                                    style={styles.conversationCard}
-                                    onPress={() =>
-                                        router.push({
-                                            pathname: "/(tabs)/textToSign",
-                                            params: {
-                                                text: conversation.text,
-                                                translated: conversation.translated,
-                                                language: conversation.language,
-                                                fromSaved: true
-                                            }
-                                        })
-                                    }
-                                >
-                                    <Text
-                                        style={styles.conversationText}
-                                        numberOfLines={2}
-                                        ellipsizeMode="tail"
-                                    >
-                                        {conversation.text}
-                                    </Text>
-                                    <Text style={styles.conversationDate}>
-                                        {new Date(conversation.timestamp).toLocaleDateString()}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
+                    <View style={styles.conversationsContainer}>
+                        <Text style={styles.sectionTitle}>Recent Conversations</Text>
+                        {recentConversations.map((conversation, index) => (
+                            <View key={index} style={styles.conversationCard}>
+                                <Text style={styles.conversationText}>
+                                    {conversation.text}
+                                </Text>
+                            </View>
+                        ))}
                     </View>
                 )}
             </ScrollView>
@@ -250,8 +242,25 @@ const styles = StyleSheet.create({
         color: "#333",
         marginTop: 5,
     },
+    savedButton: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#E0F2F1",
+        paddingVertical: 12,
+        paddingHorizontal: 15,
+        borderRadius: 20,
+        alignSelf: "flex-start",
+        marginTop: -70,
+        marginBottom: 45,
+        marginLeft: 155
+    },
+    savedButtonText: {
+        color: "#155658",
+        marginLeft: 8,
+        fontWeight: "500",
+    },
     sectionContainer: {
-        marginTop: 25,
+        marginTop: 10,
     },
     sectionTitle: {
         fontSize: 18,
@@ -302,15 +311,7 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: "#333",
     },
-    conversationDate: {
-        fontSize: 12,
-        color: "#999",
-        marginTop: 5,
-        textAlign: "right",
-    },
     card: {
         marginTop: -5
     }
-
-
 });

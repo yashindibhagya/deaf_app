@@ -21,8 +21,6 @@ import * as FileSystem from 'expo-file-system';
 import { useRouter } from 'expo-router';
 import * as Speech from 'expo-speech';
 
-// Import our new VoiceRecorder component
-import VoiceRecorder from '../../Components/TextToSign/VoiceRecorder';
 
 // Import the translation API services
 import {
@@ -209,6 +207,28 @@ export default function TextToSign() {
     const router = useRouter();
     const { getSignVideoByWord, isLoading, signsData, recordFailedVideoUrl, findSignForPhrase } = useContext(VideoContext);
     const videoRef = useRef(null);
+
+    // Function to adjust playback speed
+    const adjustPlaybackSpeed = (increment) => {
+        // Create a range of speeds: 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0
+        const speedOptions = [0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0];
+
+        // Find current speed index
+        const currentIndex = speedOptions.findIndex(speed => speed === playbackRate);
+
+        // Calculate new index with bounds checking
+        let newIndex = currentIndex + increment;
+        newIndex = Math.max(0, Math.min(speedOptions.length - 1, newIndex));
+
+        // Set new speed
+        setPlaybackRate(speedOptions[newIndex]);
+
+        // Apply to current video if playing
+        if (videoRef.current) {
+            videoRef.current.setRateAsync(speedOptions[newIndex], true)
+                .catch(error => console.error('Error setting playback rate:', error));
+        }
+    };
 
     // Set appropriate bottom padding for navigation bar
     useEffect(() => {
@@ -1352,11 +1372,11 @@ export default function TextToSign() {
                                 />
                             </TouchableOpacity>
 
-                            {/* Voice Recorder Component */}
+                            {/* Voice Recorder Component 
                             <VoiceRecorder
                                 onTranscriptionReceived={handleVoiceTranscription}
                                 languageMode={languageMode}
-                            />
+                            /> */}
                         </View>
 
                         {/* Display Sinhala script as user types */}
@@ -1724,9 +1744,27 @@ export default function TextToSign() {
                                             </TouchableOpacity>
                                         )}
 
-                                        {/* Display the current playback speed */}
-                                        <View style={styles.speedIndicator}>
-                                            <Text style={styles.speedIndicatorText}>{playbackRate}x</Text>
+                                        {/* Speed controls */}
+                                        <View style={styles.speedControls}>
+                                            <TouchableOpacity
+                                                style={[styles.speedButton, { opacity: playbackRate <= 0.5 ? 0.5 : 1 }]}
+                                                onPress={() => adjustPlaybackSpeed(-1)}
+                                                disabled={playbackRate <= 0.5}
+                                            >
+                                                <Text style={styles.speedButtonText}>-</Text>
+                                            </TouchableOpacity>
+
+                                            <View style={styles.speedIndicator}>
+                                                <Text style={styles.speedIndicatorText}>{playbackRate}x</Text>
+                                            </View>
+
+                                            <TouchableOpacity
+                                                style={[styles.speedButton, { opacity: playbackRate >= 2.0 ? 0.5 : 1 }]}
+                                                onPress={() => adjustPlaybackSpeed(1)}
+                                                disabled={playbackRate >= 2.0}
+                                            >
+                                                <Text style={styles.speedButtonText}>+</Text>
+                                            </TouchableOpacity>
                                         </View>
                                     </View>
 
@@ -2295,12 +2333,31 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         fontSize: 14,
     },
+    // New speed control styles
+    speedControls: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginLeft: 8,
+    },
+    speedButton: {
+        backgroundColor: '#155658',
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    speedButtonText: {
+        color: 'white',
+        fontWeight: 'bold',
+        fontSize: 14,
+    },
     speedIndicator: {
         backgroundColor: '#155658',
         borderRadius: 12,
         paddingVertical: 4,
         paddingHorizontal: 8,
-        marginLeft: 8,
+        marginHorizontal: 4,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -2518,4 +2575,4 @@ const styles = StyleSheet.create({
     missingVideoIcon: {
         marginLeft: 4,
     }
-})
+});

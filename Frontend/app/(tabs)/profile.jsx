@@ -37,7 +37,6 @@ export default function Profile() {
         accountInfo: false,
         password: false,
         logout: false,
-        reportBug: false,
         sendFeedback: false,
     });
 
@@ -46,9 +45,11 @@ export default function Profile() {
         email: "",
         newPassword: "",
         confirmPassword: "",
+        feedback: "",
     });
 
     const [loading, setLoading] = useState(false);
+    const [sendingFeedback, setSendingFeedback] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -60,6 +61,7 @@ export default function Profile() {
                 email: userDetail.email || auth.currentUser?.email || "",
                 newPassword: "",
                 confirmPassword: "",
+                feedback: "",
             });
         }
     }, [userDetail]);
@@ -170,6 +172,47 @@ export default function Profile() {
         } catch (error) {
             console.error("Logout error:", error);
             Alert.alert("Error", "Failed to log out.");
+        }
+    };
+
+    // Send Feedback
+    const handleSendFeedback = async () => {
+        if (!formData.feedback.trim()) {
+            Alert.alert("Error", "Please enter your feedback");
+            return;
+        }
+
+        setSendingFeedback(true);
+        try {
+            // This is where you would implement your feedback submission logic
+            // For example, sending to your server or Firebase
+
+            // Simulating an API call
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            // Show success message
+            Alert.alert(
+                "Feedback Sent",
+                "Thank you for your feedback! We appreciate your input."
+            );
+
+            // Clear feedback field
+            setFormData({
+                ...formData,
+                feedback: ""
+            });
+
+            // Collapse the feedback section
+            setExpanded(prev => ({
+                ...prev,
+                sendFeedback: false
+            }));
+
+        } catch (error) {
+            console.error("Send feedback error:", error);
+            Alert.alert("Error", "Failed to send feedback. Please try again.");
+        } finally {
+            setSendingFeedback(false);
         }
     };
 
@@ -375,22 +418,6 @@ export default function Profile() {
                         {/* Feedback Section */}
                         <Text style={styles.sectionHeader}>FEEDBACK</Text>
 
-                        {/* Report a Bug */}
-                        <TouchableOpacity
-                            style={styles.option}
-                            onPress={() => toggleExpand("reportBug")}
-                        >
-                            <View style={styles.optionRow}>
-                                <AntDesign name="warning" size={20} color="#FFA726" />
-                                <Text style={styles.optionText}>Report a bug</Text>
-                            </View>
-                            <AntDesign
-                                name={expanded.reportBug ? "up" : "down"}
-                                size={16}
-                                color="black"
-                            />
-                        </TouchableOpacity>
-
                         {/* Send Feedback */}
                         <TouchableOpacity
                             style={styles.option}
@@ -406,6 +433,36 @@ export default function Profile() {
                                 color="black"
                             />
                         </TouchableOpacity>
+
+                        {expanded.sendFeedback && (
+                            <View style={styles.expandedContent}>
+                                <Text style={styles.feedbackLabel}>
+                                    We'd love to hear your thoughts on how we can improve the app!
+                                </Text>
+                                <TextInput
+                                    style={styles.feedbackInput}
+                                    value={formData.feedback}
+                                    onChangeText={(text) =>
+                                        setFormData((prev) => ({ ...prev, feedback: text }))
+                                    }
+                                    placeholder="Enter your feedback here..."
+                                    multiline={true}
+                                    numberOfLines={5}
+                                    textAlignVertical="top"
+                                />
+                                <TouchableOpacity
+                                    style={styles.submitFeedbackButton}
+                                    onPress={handleSendFeedback}
+                                    disabled={sendingFeedback}
+                                >
+                                    {sendingFeedback ? (
+                                        <ActivityIndicator size="small" color="#FFFFFF" />
+                                    ) : (
+                                        <Text style={styles.buttonText}>Submit Feedback</Text>
+                                    )}
+                                </TouchableOpacity>
+                            </View>
+                        )}
                     </View>
                 </ScrollView>
             </KeyboardAvoidingView>
@@ -524,5 +581,31 @@ const styles = StyleSheet.create({
         marginTop: 20,
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    // New styles for feedback section
+    feedbackLabel: {
+        fontSize: 14,
+        color: "#333",
+        marginBottom: 10,
+        marginLeft: 10,
+    },
+    feedbackInput: {
+        width: "100%",
+        height: 120,
+        borderColor: "#ccc",
+        borderWidth: 1,
+        borderRadius: 8,
+        padding: 10,
+        marginBottom: 15,
+        backgroundColor: "#fff",
+        marginLeft: 0,
+    },
+    submitFeedbackButton: {
+        backgroundColor: "#FFA726",
+        paddingVertical: 10,
+        borderRadius: 30,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 5,
     },
 });
