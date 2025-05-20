@@ -1,13 +1,40 @@
 // backend/services/cloudinaryService.js
 const cloudinary = require('cloudinary').v2;
+const dotenv = require('dotenv');
 
-// Configure Cloudinary
-cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'dxjb5lepy',
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
-    secure: true
-});
+// Load environment variables
+dotenv.config();
+
+// Configure Cloudinary with either environment variables or default values
+const configureCloudinary = () => {
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME || 'dxjb5lepy';
+    const apiKey = process.env.CLOUDINARY_API_KEY;
+    const apiSecret = process.env.CLOUDINARY_API_SECRET;
+
+    if (!apiKey || !apiSecret) {
+        console.log('Cloudinary API key or secret not found in environment variables');
+        console.log('Using read-only configuration for Cloudinary (limited functionality)');
+    } else {
+        console.log(`Using Cloudinary configuration with API key for cloud: ${cloudName}`);
+    }
+
+    // Configure Cloudinary
+    cloudinary.config({
+        cloud_name: cloudName,
+        api_key: apiKey,
+        api_secret: apiSecret,
+        secure: true
+    });
+
+    return {
+        cloudName,
+        hasFullAccess: !!(apiKey && apiSecret)
+    };
+};
+
+// Initialize Cloudinary
+const { cloudName, hasFullAccess } = configureCloudinary();
+console.log(`Cloudinary initialized for cloud: ${cloudName} with ${hasFullAccess ? 'full' : 'limited'} access`);
 
 // Constants
 const DEFAULT_VERSION = 'v1742644992';
@@ -24,7 +51,7 @@ const getVideoUrl = (videoName, version = DEFAULT_VERSION) => {
     // Clean the video name
     const cleanName = videoName.toLowerCase().trim().replace(/\s+/g, '_');
 
-    return `https://res.cloudinary.com/${cloudinary.config().cloud_name}/${version}/video/upload/${cleanName}.mp4`;
+    return `https://res.cloudinary.com/${cloudinary.config().cloud_name}/video/upload/${version}/${cleanName}.mp4`;
 };
 
 /**
@@ -49,6 +76,10 @@ const getThumbnailUrl = (imageName, folder = 'thumbnails') => {
  * @returns {Promise} - Upload result
  */
 const uploadVideo = (filePath, publicId) => {
+    if (!hasFullAccess) {
+        return Promise.reject(new Error('Cannot upload to Cloudinary: API credentials not configured'));
+    }
+
     return new Promise((resolve, reject) => {
         cloudinary.uploader.upload(filePath, {
             resource_type: 'video',
@@ -63,8 +94,33 @@ const uploadVideo = (filePath, publicId) => {
     });
 };
 
+/**
+ * Generate a Cloudinary signed URL (for secure access if needed)
+ * @param {string} publicId - The public ID of the resource
+ * @param {Object} options - Options for the URL
+ * @returns {string} - Signed Cloudinary URL
+ */
+const generateSignedUrl = (publicId, options = {}) => {
+    if (!hasFullAccess) {
+        console.warn('Generating unsigned URL: API credentials not configured');
+        return getVideoUrl(publicId);
+    }
+
+    const defaultOptions = {
+        resource_type: 'video',
+        format: 'mp4',
+        secure: true,
+        ...options
+    };
+
+    return cloudinary.url(publicId, defaultOptions);
+};
+
 module.exports = {
     getVideoUrl,
     getThumbnailUrl,
-    uploadVideo
+    uploadVideo,
+    generateSignedUrl,
+    cloudinary,
+    hasFullAccess
 };
