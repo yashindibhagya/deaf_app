@@ -1,4 +1,4 @@
-# utils/config.py
+#!/usr/bin/env python3
 """
 GestureConnect Configuration
 
@@ -17,7 +17,7 @@ LOGS_PATH = os.path.join(BASE_DIR, 'logs')  # Where logs are stored
 
 # Actions/Labels
 #ACTIONS = ["ayanna","aayanna","aeyanna"]  # Sign language alphabets
-ACTIONS = ["A","B","C","D","E","F", "G", "H","I","J","K","L","M","N","O","P","Q","R","S","T","what","your","name","how","you","thankyou","old","ayanna","aayanna","aeyanna"]  # Sign language alphabets
+ACTIONS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "what", "your", "name", "how", "you", "thankyou", "old"]  # Sign language alphabets
 #"U","V","W","X","Y","Z"
 
 # Data Collection Parameters
