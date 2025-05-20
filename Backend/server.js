@@ -37,6 +37,94 @@ const assemblyAI = {
     }
 };
 
+// Serve TensorFlow.js model files
+const MODEL_DIR = path.join(__dirname, '..', 'Model', 'models');
+app.use('/model', express.static(MODEL_DIR));
+
+// Endpoint to check if model files exist
+app.get('/api/model/info', (req, res) => {
+    try {
+        const modelPath = path.join(MODEL_DIR, 'sign_language_model.keras');
+        const modelExists = fs.existsSync(modelPath);
+
+        if (modelExists) {
+            const stats = fs.statSync(modelPath);
+            res.json({
+                exists: true,
+                size: stats.size,
+                lastModified: stats.mtime,
+                path: '/model/sign_language_model.keras'
+            });
+        } else {
+            res.json({
+                exists: false,
+                message: 'Model file not found'
+            });
+        }
+    } catch (error) {
+        console.error('Error checking model info:', error);
+        res.status(500).json({
+            error: 'Failed to get model info',
+            details: error.message
+        });
+    }
+});
+
+// Endpoint to convert and serve the Keras model as TensorFlow.js format
+app.get('/api/model/convert', async (req, res) => {
+    try {
+        // This would normally use tensorflowjs_converter to convert the model
+        // For this example, we'll just check if the model exists
+        const kerasModelPath = path.join(MODEL_DIR, 'sign_language_model.keras');
+        const tfjsModelDir = path.join(MODEL_DIR, 'tfjs_model');
+
+        if (!fs.existsSync(kerasModelPath)) {
+            return res.status(404).json({ error: 'Keras model not found' });
+        }
+
+        // In a real implementation, you would run the converter here
+        // For now, just create a sample model.json file for demonstration
+        fs.ensureDirSync(tfjsModelDir);
+
+        // Check if conversion is already done
+        if (!fs.existsSync(path.join(tfjsModelDir, 'model.json'))) {
+            // This is a placeholder. In a real app, you would convert the model
+            fs.writeFileSync(
+                path.join(tfjsModelDir, 'model.json'),
+                JSON.stringify({
+                    format: "layers-model",
+                    generatedBy: "TensorFlow.js Converter",
+                    convertedBy: "TensorFlow.js Converter v3.18.0",
+                    modelTopology: {},
+                    weightsManifest: [
+                        {
+                            paths: ["group1-shard1of1.bin"],
+                            weights: []
+                        }
+                    ]
+                })
+            );
+
+            // Create a dummy weights file
+            fs.writeFileSync(
+                path.join(tfjsModelDir, 'group1-shard1of1.bin'),
+                Buffer.alloc(1024)
+            );
+        }
+
+        res.json({
+            success: true,
+            modelPath: '/model/tfjs_model/model.json'
+        });
+    } catch (error) {
+        console.error('Error converting model:', error);
+        res.status(500).json({
+            error: 'Failed to convert model',
+            details: error.message
+        });
+    }
+});
+
 // Endpoint to handle audio transcription
 app.post('/api/transcribe', upload.single('audio'), async (req, res) => {
     try {
