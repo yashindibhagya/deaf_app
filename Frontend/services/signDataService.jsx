@@ -13,7 +13,8 @@ import categories from '../assets/Data/categories.json';
 import numbers from '../assets/Data/numbers.json';
 import people from '../assets/Data/people.json';
 import colors from '../assets/Data/colors.json';
-import animal from '../assets/Data/animal.json'
+import animal from '../assets/Data/animal.json';
+import greeting from '../assets/Data/greeting.json'
 
 /**
  * Load and process all sign data from the JSON files
@@ -31,7 +32,8 @@ export const loadAllSignData = async () => {
             ...numbers,
             ...people,
             ...colors,
-            ...animal
+            ...animal,
+            ...greeting
         ];
 
         // Process signs to ensure all required properties exist
